@@ -2,7 +2,7 @@
  * @file  environment.h
  * @brief Environment abstraction to get temperature, humidity, and CO2
  *
- * @note Environment task is running periodically to get temperature and humidity and is pinned to core 1
+ * @note Environment task is running periodically to get real-time data from the sensors and is pinned to core 1
  *
  * @copyright Copyright (c) 2024
  *
@@ -14,7 +14,6 @@
 #include <Arduino.h>
 #include <DHTesp.h>
 #include <MQ135.h>
-#include <MQUnifiedsensor.h>
 #include "climate.h"
 #include "co2.h"
 
@@ -27,7 +26,7 @@ typedef struct {
 } Environment;
 
 TaskHandle_t env_task_handle = NULL;
-extern Environment env;
+extern Environment env;  // environment data [temperature, humidity, CO2] (periodically updated by environment task)
 
 /* function declarations */
 bool init_environment();
@@ -73,7 +72,7 @@ void environment_task(void *pvParameters) {
     env.humidity = climate.humidity;
     env.co2 = get_co2(climate.temperature, climate.humidity);
 
-    Serial.println("\n-- Environment task running --\n");
+    Serial.println("Environment task running\n");
     vTaskDelay(pdMS_TO_TICKS(TASK_DELAY));
   }
 

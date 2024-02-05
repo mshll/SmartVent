@@ -12,7 +12,7 @@
 #include <Arduino.h>
 #include <DHTesp.h>
 
-#define DHT_PIN 19
+#define DHT_PIN 27  // 19
 #define DHT_TYPE DHTesp::DHT11
 
 DHTesp dht;
@@ -35,8 +35,7 @@ void init_climate() {
 /**
  * @brief Read temperature and humidity from DHT11 sensor
  *
- * @return true if successful
- *         false if failed
+ * @return temperature and humidity data
  */
 TempAndHumidity get_climate() {
   // Reading temperature and humidity takes about 250 milliseconds

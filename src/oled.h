@@ -12,6 +12,7 @@
 #define __OLED__H
 
 #include <Arduino.h>
+#include <MQ135.h>
 #include <U8g2lib.h>
 
 extern U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2;
@@ -61,13 +62,13 @@ void display_main_screen(float temp, float hum, float co2) {
   u8g2.drawXBMP(8, 13, 16, 16, image_Temperature_16x16_bits);
   u8g2.setFont(u8g2_font_profont22_tr);
   u8g2.drawStr(21, 28, String(temp_int).c_str());
-  u8g2.setFont(u8g2_font_5x8_tr);
+  u8g2.setFont(u8g2_font_5x7_tf);
   u8g2.drawStr(44, 28, ("." + String(temp_dec)).c_str());
   u8g2.setFont(u8g2_font_6x10_tr);
   u8g2.drawStr(53, 20, "C");
   u8g2.setFont(u8g2_font_profont22_tr);
   u8g2.drawStr(80, 28, String(hum_int).c_str());
-  u8g2.setFont(u8g2_font_5x8_tr);
+  u8g2.setFont(u8g2_font_5x7_tf);
   u8g2.drawStr(103, 28, ("." + String(hum_dec)).c_str());
   u8g2.setFont(u8g2_font_6x10_tr);
   u8g2.drawStr(123, 7, "%");
@@ -93,6 +94,12 @@ void display_main_screen(float temp, float hum, float co2) {
   u8g2.drawXBMP(107, 13, 3, 3, image_Layer_24_bits);
   u8g2.drawXBMP(114, 17, 3, 3, image_Layer_24_bits);
   u8g2.drawXBMP(48, 13, 3, 3, image_Layer_25_bits);
+
+  u8g2.setFont(u8g2_font_04b_03_tr);
+  float rzero = mq135_sensor.getRZero();
+  float corrected_rzero = mq135_sensor.getCorrectedRZero(temp, hum);
+  u8g2.drawStr(10, 5, ("r0: " + String(rzero, 2) + "   r0c: " + String(corrected_rzero, 2)).c_str());
+
   u8g2.sendBuffer();
 }
 

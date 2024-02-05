@@ -17,6 +17,7 @@
 #include <U8g2lib.h>
 #include <Wire.h>
 #include "MQ135.h"
+#include "dashboard.h"
 #include "environment.h"
 #include "oled.h"
 
@@ -28,22 +29,26 @@ Environment env;  // environment data [temperature, humidity, CO2] (saved from e
 
 void setup() {
   Serial.begin(9600);
+  ESPConnect.autoConnect("SmartVent AP", "capstone");
 
   init_environment();
   init_oled();
+  connect_screen();
   delay(3000);
+  init_dashboard();
 }
 
 void loop() {
-  if (isnan(env.temperature) || isnan(env.humidity)) {
-    u8g2.clearBuffer();
-    u8g2.drawStr(0, 10, "Failed to read from DHT sensor!");
-    u8g2.sendBuffer();
-    delay(2000);
-    return;
-  }
+  // if (isnan(env.temperature) || isnan(env.humidity)) {
+  //   u8g2.clearBuffer();
+  //   u8g2.drawStr(0, 10, "Failed to read from DHT sensor!");
+  //   u8g2.sendBuffer();
+  //   delay(2000);
+  //   return;
+  // }
 
   display_main_screen(env.temperature, env.humidity, env.co2);
 
+  update_dashboard();
   delay(500);
 }

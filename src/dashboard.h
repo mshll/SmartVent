@@ -5,9 +5,9 @@
 
 #include <Arduino.h>
 #include <AsyncTCP.h>
-#include <ESPConnect.h>
 #include <ESPDash.h>
 #include <ESPmDNS.h>
+#include <MycilaESPConnect.h>
 #include <TickTwo.h>
 #include <WiFi.h>
 #include "environment.h"
@@ -18,9 +18,11 @@ void update_dashboard();
 void dashboard_ticker_handler();
 
 AsyncWebServer server(80);
-ESPDash dashboard(&server);
+ESPDash dashboard(&server, true, "/home");
 // TickTwo dashboard_ticker(update_dashboard, 1000, 5);
 TickTwo dashboard_ticker(dashboard_ticker_handler, 5000, 0, MILLIS);
+String hostname = "smartvent";
+uint32_t lastLog = 0;
 
 /*
   Dashboard Cards
@@ -32,32 +34,75 @@ Card co2(&dashboard, GENERIC_CARD, "CO2", "ppm");
 Card reset_wifi_btn(&dashboard, BUTTON_CARD, "Reset WiFi", "wifi");
 
 void init_dashboard() {
-  // AsyncWiFiManager wifiManager(&server, &dns);
-  //  wifiManager.resetSettings();
-  // wifiManager.autoConnect("SmartVent AP", "capstone");
+  // serve your logo here
+  server.on("/logo", HTTP_GET, [&](AsyncWebServerRequest* request) {
+    // AsyncWebServerResponse* response = request->beginResponse_P(200, "image/png", _binary_data_logo_icon_png_gz_start,
+    // _binary_data_logo_icon_png_gz_end - _binary_data_logo_icon_png_gz_start);
+    AsyncWebServerResponse* response = request->beginResponse_P(200, "image/png", "", 0);
+    response->addHeader("Content-Encoding", "gzip");
+    response->addHeader("Cache-Control", "public, max-age=900");
+    request->send(response);
+  });
 
-  ESPConnect.begin(&server);
+  // serve your home page here
+  // server.on("/home", HTTP_GET, [&](AsyncWebServerRequest* request) { request->send(200, "text/plain", "Hello World!"); });
+
+  // clear persisted config
+  server.on("/clear", HTTP_GET, [&](AsyncWebServerRequest* request) {
+    Serial.println("Clearing configuration...");
+    ESPConnect.clearConfiguration();
+    request->send(200);
+  });
+
+  // add a rewrite which is only applicable in AP mode and STA mode, but not in Captive Portal mode
+  server.rewrite("/", "/home").setFilter([](AsyncWebServerRequest* request) { return ESPConnect.getState() != ESPConnectState::PORTAL_STARTED; });
+
+  // network state listener is required here in async mode
+  ESPConnect.listen([](ESPConnectState previous, ESPConnectState state) {
+    JsonDocument doc;
+    ESPConnect.toJson(doc.to<JsonObject>());
+    serializeJsonPretty(doc, Serial);
+    Serial.println();
+
+    switch (state) {
+      case ESPConnectState::NETWORK_CONNECTED:
+      case ESPConnectState::AP_STARTED:
+        server.begin();
+        // ArduinoOTA.setHostname(hostname.c_str());
+        // ArduinoOTA.setMdnsEnabled(true);
+        // ArduinoOTA.begin();
+        MDNS.begin(hostname.c_str());
+        MDNS.addService("http", "tcp", 80);
+        break;
+
+      case ESPConnectState::NETWORK_DISCONNECTED:
+        server.end();
+      default:
+        break;
+    }
+  });
+
+  ESPConnect.setAutoRestart(true);
+  ESPConnect.setBlocking(false);
+  ESPConnect.setCaptivePortalTimeout(180);
+  ESPConnect.setConnectTimeout(10);
+
+  Serial.println("====> Trying to connect to saved WiFi or will start portal in the background...");
+
+  ESPConnect.begin(&server, hostname.c_str(), "SmartVent AP", "capstone");
+
+  //*************************************************************
 
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
 
-  if (!MDNS.begin("smartvent")) {  // Start the mDNS responder for smartvent.local
-    Serial.println("Error setting up MDNS responder!");
-  } else {
-    Serial.println("mDNS responder started");
-  }
-
-  server.begin();
-
-  // Add service to MDNS-SD
-  MDNS.addService("http", "tcp", 80);
-
   dashboard_ticker.start();
+
   reset_wifi_btn.attachCallback([&](bool value) {
     Serial.println("[Card1] Button Callback Triggered: " + String((value) ? "true" : "false"));
     reset_wifi_btn.update(value);
     dashboard.sendUpdates();
-    ESPConnect.erase();
+    ESPConnect.clearConfiguration();
     ESP.restart();
   });
 }
@@ -65,6 +110,16 @@ void init_dashboard() {
 void update_dashboard() {
   dashboard_ticker.update();
   reset_wifi_btn.update(true);
+
+  ESPConnect.loop();
+
+  if (millis() - lastLog > 5000) {
+    JsonDocument doc;
+    ESPConnect.toJson(doc.to<JsonObject>());
+    serializeJson(doc, Serial);
+    Serial.println();
+    lastLog = millis();
+  }
 }
 
 void dashboard_ticker_handler() {

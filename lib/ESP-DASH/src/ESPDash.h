@@ -1,8 +1,8 @@
 /*
-____ ____ ___  ___  ____ ____ _  _ 
-|___ [__  |__] |  \ |__| [__  |__| 
-|___ ___] |    |__/ |  | ___] |  | 
-                                   
+____ ____ ___  ___  ____ ____ _  _
+|___ [__  |__] |  \ |__| [__  |__|
+|___ ___] |    |__/ |  | ___] |  |
+
 ESP-DASH V3
 ---------------------
 Author: Ayush Sharma
@@ -71,7 +71,7 @@ class ESPDash{
 
   public:
 
-    ESPDash(AsyncWebServer* server, bool enable_stats = true);
+    ESPDash(AsyncWebServer* server, bool enable_stats = true, String path = "/");
 
     // Set Authentication
     void setAuthentication(const char *user, const char *pass);
@@ -88,7 +88,7 @@ class ESPDash{
 
     // Notify client side to update values
     void sendUpdates();
-  
+
     ~ESPDash();
 };
 

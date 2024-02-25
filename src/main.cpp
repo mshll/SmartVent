@@ -29,12 +29,11 @@ Environment env;  // environment data [temperature, humidity, CO2] (saved from e
 
 void setup() {
   Serial.begin(9600);
-  ESPConnect.autoConnect("SmartVent AP", "capstone");
 
   init_environment();
   init_oled();
   connect_screen();
-  delay(3000);
+  delay(500);
   init_dashboard();
 }
 

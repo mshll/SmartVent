@@ -22,7 +22,7 @@ struct ChartNames chartTags[] = {
 /*
   Constructor
 */
-ESPDash::ESPDash(AsyncWebServer* server, bool enable_stats) {
+ESPDash::ESPDash(AsyncWebServer* server, bool enable_stats, String path) {
   _server = server;
   stats_enabled = enable_stats;
 
@@ -30,7 +30,7 @@ ESPDash::ESPDash(AsyncWebServer* server, bool enable_stats) {
   _ws = new AsyncWebSocket("/dashws");
 
   // Attach AsyncWebServer Routes
-  _server->on("/", HTTP_GET, [this](AsyncWebServerRequest *request){
+  _server->on(path.c_str(), HTTP_GET, [this](AsyncWebServerRequest *request){
     if(basic_auth){
       if(!request->authenticate(username, password))
       return request->requestAuthentication();

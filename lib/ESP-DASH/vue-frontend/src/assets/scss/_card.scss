@@ -3,12 +3,15 @@
 .card {
   background-color: #FFF;
   box-shadow: 0px 0px 50px rgba(232, 232, 232, 0.9);
-  .card-name{
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  
+  .card-name {
     font-size: 1.05rem;
     font-weight: 400 !important;
   }
 
-  .card-icon{
+  .card-icon {
     border-radius: 0.45rem;
   }
 }

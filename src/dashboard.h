@@ -33,8 +33,9 @@ uint32_t lastLog = 0;
 */
 Card temperature(&dashboard, TEMPERATURE_CARD, "Temperature", "°C");
 Card humidity(&dashboard, HUMIDITY_CARD, "Humidity", "%");
-Card co2(&dashboard, GENERIC_CARD, "CO2", "ppm");
-Card reset_wifi_btn(&dashboard, BUTTON_CARD, "Reset WiFi", "wifi");
+Card co2(&dashboard, AIR_CARD, "", "ppm");
+Card reset_wifi_btn(&dashboard, PUSH_BUTTON_CARD, "Reset WiFi", "wifi");
+Card button_test(&dashboard, BUTTON_CARD, "Button Test", "test");
 
 /* helper functions prototypes */
 void reset_wifi();
@@ -93,11 +94,17 @@ void init_dashboard() {
     dashboard.sendUpdates();
     reset_wifi();
   });
+
+  button_test.attachCallback([&](bool value) {
+    button_test.update(value);
+    dashboard.sendUpdates();
+  });
 }
 
 void update_dashboard() {
   dashboard_ticker.update();
   reset_wifi_btn.update(true);
+  button_test.update(true);
 
   ESPConnect.loop();
 

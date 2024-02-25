@@ -3,7 +3,7 @@
   <div class="card-content">
     <nav class="navbar" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
-        <router-link class="navbar-item" to="/">
+        <router-link class="navbar-item" to="/" style="flex-grow: 1; background-color: transparent;">
           <h1 class="title is-4">Smart Vent</h1>
         </router-link>
 

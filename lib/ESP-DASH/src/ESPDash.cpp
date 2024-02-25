@@ -4,11 +4,13 @@
 // ID, type
 struct CardNames cardTags[] = {
   {GENERIC_CARD, "generic"},
+  {AIR_CARD, "air"},
   {TEMPERATURE_CARD, "temperature"},
   {HUMIDITY_CARD, "humidity"},
   {STATUS_CARD, "status"},
   {SLIDER_CARD, "slider"},
   {BUTTON_CARD, "button"},
+  {PUSH_BUTTON_CARD, "push_button"},
   {PROGRESS_CARD, "progress"},
 };
 
@@ -60,6 +62,18 @@ ESPDash::ESPDash(AsyncWebServer* server, bool enable_stats, String path) {
           else if (json["command"] == "getStats")
             response = generateLayoutJSON(true);
           else if (json["command"] == "buttonClicked") {
+            // execute and reference card data struct to funtion
+            uint32_t id = json["id"].as<uint32_t>();
+            for(int i=0; i < cards.Size(); i++){
+              Card *p = cards[i];
+              if(id == p->_id){
+                if(p->_callback != nullptr){
+                  p->_callback(json["value"].as<bool>());
+                }
+              }
+            }
+            return;
+          } else if (json["command"] == "pushButtonClicked") {
             // execute and reference card data struct to funtion
             uint32_t id = json["id"].as<uint32_t>();
             for(int i=0; i < cards.Size(); i++){

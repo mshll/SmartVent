@@ -3,12 +3,14 @@
     <div class="container" v-if="cards.length > 0 || charts.length > 0">
       <div class="columns is-mobile is-multiline">
         <generic-card v-for="card in getParticularCards('generic')" :key="card.id" :card="card"></generic-card>
+        <air-card v-for="card in getParticularCards('air')" :key="card.id" :card="card"></air-card>
         <temperature-card v-for="card in getParticularCards('temperature')" :key="card.id" :card="card"></temperature-card>
         <humdidity-card v-for="card in getParticularCards('humidity')" :key="card.id" :card="card"></humdidity-card>
         <status-card v-for="card in getParticularCards('status')" :key="card.id" :card="card"></status-card>
         <progress-card v-for="card in getParticularCards('progress')" :key="card.id" :card="card"></progress-card>
         <slider-card v-for="card in getParticularCards('slider')" :key="card.id" :card="card"></slider-card>
         <button-card v-for="card in getParticularCards('button')" :key="card.id" :card="card"></button-card>
+        <push-button-card v-for="card in getParticularCards('push_button')" :key="card.id" :card="card"></push-button-card>
       </div>
       <div class="columns is-mobile is-multiline">
         <bar-chart v-for="chart in getParticularCharts('bar')" :key="chart.id" :chart="chart"></bar-chart>
@@ -37,13 +39,16 @@
 </template>
 
 <script>
+// @ts-nocheck
 import GenericCard from '@/components/GenericCard.vue';
+import AirCard from '@/components/AirCard.vue';
 import TemperatureCard from '@/components/TemperatureCard.vue';
 import HumdidityCard from '@/components/HumidityCard.vue';
 import StatusCard from '@/components/StatusCard.vue';
 import ProgressCard from '@/components/ProgressCard.vue';
 import SliderCard from '@/components/SliderCard.vue';
 import ButtonCard from '@/components/ButtonCard.vue';
+import PushButtonCard from '@/components/PushButtonCard.vue';
 
 import BarChart from '@/components/BarChart.vue';
 
@@ -54,11 +59,13 @@ export default {
 
   components: {
     GenericCard,
+    AirCard,
     TemperatureCard,
     HumdidityCard,
     StatusCard,
     ProgressCard,
     ButtonCard,
+    PushButtonCard,
     SliderCard,
     BarChart
   },

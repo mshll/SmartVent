@@ -1,6 +1,6 @@
 <template>
 <div>
-  <div class="section pt-1">
+  <div class="section pt-1 pb-5">
     <div class="container mt-6">
       <navbar />
     </div>
@@ -14,6 +14,7 @@
 </template>
 
 <script>
+// @ts-nocheck
 import EventBus from './event-bus.js';
 import Socket from './socket';
 import Navbar from './components/Navbar';
@@ -123,6 +124,14 @@ export default {
     EventBus.$on('buttonClicked', data => {
       Socket.send(JSON.stringify({
         "command": "buttonClicked",
+        "id": data.id,
+        "value": data.value
+      }));
+    });
+
+    EventBus.$on('pushButtonClicked', data => {
+      Socket.send(JSON.stringify({
+        "command": "pushButtonClicked",
         "id": data.id,
         "value": data.value
       }));

@@ -14,7 +14,7 @@
 
 #define MQ135_PIN 33
 
-MQ135 mq135_sensor = MQ135(MQ135_PIN, 47.0, 22.0);
+MQ135 mq135_sensor = MQ135(MQ135_PIN, 50.0, 22.0);
 
 /* function declarations */
 void init_co2();

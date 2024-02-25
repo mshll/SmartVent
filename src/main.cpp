@@ -30,11 +30,11 @@ Environment env;  // environment data [temperature, humidity, CO2] (saved from e
 void setup() {
   Serial.begin(9600);
 
-  init_environment();
   init_oled();
-  connect_screen();
-  delay(500);
+  display_splash_screen();
+  init_environment();
   init_dashboard();
+  delay(5000);
 }
 
 void loop() {

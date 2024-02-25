@@ -75,9 +75,10 @@
 <div class="container main-container">
 	<div class="row">
 		<div class="column text-center">
-			<img id="logo" src="/logo" alt="Logo">
+			<!-- <img id="logo" src="/logo" alt="Logo"> -->
+			<h2>Smart Vent Portal</h2>
 			<p class="mb-2 text-muted">
-				Please select a WiFi network to connect to, or choose "AP Mode".
+				Please select a WiFi network to connect to, or choose "Access Point Mode".
 			</p>
 		</div>
 	</div>

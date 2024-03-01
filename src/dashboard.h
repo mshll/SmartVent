@@ -11,6 +11,7 @@
 #include <TickTwo.h>
 #include <WiFi.h>
 #include "environment.h"
+#include "fans.h"
 #include "oled.h"
 
 void init_dashboard();
@@ -22,10 +23,12 @@ void dashboard_ticker_handler();
 #define AP_PASS "capstone"
 
 AsyncWebServer server(80);
-ESPDash dashboard(&server, true, "/home");
+ESPDash dashboard(&server, true, "/dash");
 // TickTwo dashboard_ticker(update_dashboard, 1000, 5);
 TickTwo dashboard_ticker(dashboard_ticker_handler, 5000, 0, MILLIS);
 uint32_t lastLog = 0;
+
+bool oled_enabled = true;
 
 /*
   Dashboard Cards
@@ -36,6 +39,7 @@ Card humidity(&dashboard, HUMIDITY_CARD, "Humidity", "%");
 Card co2(&dashboard, AIR_CARD, "", "ppm");
 Card reset_wifi_btn(&dashboard, PUSH_BUTTON_CARD, "Reset WiFi", "wifi");
 Card button_test(&dashboard, BUTTON_CARD, "Button Test", "test");
+Card fan_speed(&dashboard, SLIDER_CARD, "Fan Speed", "speed");
 
 /* helper functions prototypes */
 void reset_wifi();
@@ -49,7 +53,7 @@ void init_dashboard() {
   });
 
   // add a rewrite which is only applicable in AP mode and STA mode, but not in Captive Portal mode
-  server.rewrite("/", "/home").setFilter([](AsyncWebServerRequest* request) { return ESPConnect.getState() != ESPConnectState::PORTAL_STARTED; });
+  server.rewrite("/", "/dash").setFilter([](AsyncWebServerRequest* request) { return ESPConnect.getState() != ESPConnectState::PORTAL_STARTED; });
 
   // network state listener is required here in async mode
   ESPConnect.listen([](ESPConnectState previous, ESPConnectState state) {
@@ -73,9 +77,9 @@ void init_dashboard() {
     }
   });
 
-  ESPConnect.setAutoRestart(true);
+  ESPConnect.setAutoRestart(false);
   ESPConnect.setBlocking(false);
-  ESPConnect.setCaptivePortalTimeout(180);
+  ESPConnect.setCaptivePortalTimeout(86400);
   ESPConnect.setConnectTimeout(10);
 
   Serial.println("====> Trying to connect to saved WiFi or will start portal in the background...");
@@ -84,6 +88,8 @@ void init_dashboard() {
 
   //*************************************************************
 
+  Serial.print("ESP MAC Address:  ");
+  Serial.println(WiFi.macAddress());
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
 
@@ -98,13 +104,15 @@ void init_dashboard() {
   button_test.attachCallback([&](bool value) {
     button_test.update(value);
     dashboard.sendUpdates();
+    Serial.println("Toggling OELD!\n");
+    oled_enabled = !oled_enabled;
   });
 }
 
 void update_dashboard() {
   dashboard_ticker.update();
   reset_wifi_btn.update(true);
-  button_test.update(true);
+  button_test.update(oled_enabled);
 
   ESPConnect.loop();
 

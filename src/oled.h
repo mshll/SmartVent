@@ -72,6 +72,8 @@ void display_main_screen(float temp, float hum, float co2) {
   static const unsigned char image_percent_bits[] U8X8_PROGMEM = {0xc2, 0x00, 0x65, 0x00, 0x32, 0x00, 0x98, 0x00, 0x4c, 0x01, 0x86, 0x00};
   static const unsigned char image_paint_0_bits[] U8X8_PROGMEM = {0x3c, 0x1c, 0x00, 0x66, 0x36, 0x00, 0x43, 0x63, 0x00, 0x03, 0x63, 0x02,
                                                                   0x03, 0x63, 0x05, 0x43, 0x63, 0x04, 0x66, 0x36, 0x02, 0x3c, 0x1c, 0x07};
+  static const unsigned char image_Pin_star_bits[] U8X8_PROGMEM = {0x49, 0x2a, 0x1c, 0x7f, 0x1c, 0x2a, 0x49};
+
   u8g2.setFontMode(1);
   u8g2.setBitmapMode(1);
   u8g2.drawXBM(114, 0, 9, 7, ESPConnect.getState() == ESPConnectState::NETWORK_CONNECTED ? image_wifi_on_bits : image_wifi_off_bits);
@@ -103,6 +105,10 @@ void display_main_screen(float temp, float hum, float co2) {
   u8g2.drawLine(4, 63, 4, 13);
   u8g2.drawLine(123, 63, 123, 13);
   u8g2.drawLine(123, 12, 4, 12);
+  u8g2.drawXBM(4, 0, 7, 7, image_Pin_star_bits);
+  u8g2.setFont(u8g2_font_4x6_mf);
+  u8g2.drawStr(13, 6, get_fan_speed_str());
+
   //********************
 
   u8g2.setFont(u8g2_font_04b_03_tr);

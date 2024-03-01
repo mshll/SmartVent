@@ -19,6 +19,7 @@
 #include "MQ135.h"
 #include "dashboard.h"
 #include "environment.h"
+#include "fans.h"
 #include "oled.h"
 
 #define OLED_SCL 22
@@ -34,20 +35,20 @@ void setup() {
   display_splash_screen();
   init_environment();
   init_dashboard();
-  delay(5000);
+  init_fans();
+  delay(2000);
 }
 
 void loop() {
-  // if (isnan(env.temperature) || isnan(env.humidity)) {
-  //   u8g2.clearBuffer();
-  //   u8g2.drawStr(0, 10, "Failed to read from DHT sensor!");
-  //   u8g2.sendBuffer();
-  //   delay(2000);
-  //   return;
-  // }
-
-  display_main_screen(env.temperature, env.humidity, env.co2);
+  // display_main_screen(env.temperature, env.humidity, env.co2);
+  if (oled_enabled) {
+    display_main_screen(env.temperature, env.humidity, env.co2);
+  } else {
+    u8g2.clearBuffer();
+    u8g2.sendBuffer();
+  }
 
   update_dashboard();
+  // update_buttons();
   delay(500);
 }

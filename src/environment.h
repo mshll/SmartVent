@@ -16,6 +16,7 @@
 #include <MQ135.h>
 #include "climate.h"
 #include "co2.h"
+#include "fans.h"
 
 #define TASK_DELAY 3000  // in milliseconds
 
@@ -71,6 +72,8 @@ void environment_task(void *pvParameters) {
     env.temperature = climate.temperature;
     env.humidity = climate.humidity;
     env.co2 = get_co2(climate.temperature, climate.humidity);
+
+    update_fans(env.co2);
 
     Serial.println("Environment task running\n");
     vTaskDelay(pdMS_TO_TICKS(TASK_DELAY));

@@ -1,39 +1,55 @@
-// Pin definitions
-const int leftButtonPin = 2;
-const int rightButtonPin = 3;
-const int selectButtonPin = 4;
-const int homeButtonPin = 5;
+/*
+* Basic Multiple Button with a single click function.
+* Must have lennarthennigs/Button2@^2.3.2 for library in platformio.ini.
+*/
+#include <Arduino.h>
+#include "Button2.h"
+
+
+#define LEFT_BUTTON_PIN  33
+#define RIGHT_BUTTON_PIN  14
+#define UP_BUTTON_PIN  15
+#define DOWN_BUTTON_PIN  32
+
+
+Button2 buttonLeft, buttonRight, buttonUp, buttonDown;
+
 
 void setup() {
-  // Initialize Serial communication
-  Serial.begin(9600);
+  Serial.begin(19200);
+  delay(50);
+  Serial.println("\n\nMultiple Buttons Demo");
+  
+  buttonLeft.begin(LEFT_BUTTON_PIN);
+  buttonLeft.setClickHandler(click);
 
-  // Set button pins as input with pull-up resistors enabled
-  pinMode(leftButtonPin, INPUT_PULLUP);
-  pinMode(rightButtonPin, INPUT_PULLUP);
-  pinMode(selectButtonPin, INPUT_PULLUP);
-  pinMode(homeButtonPin, INPUT_PULLUP);
+  buttonRight.begin(RIGHT_BUTTON_PIN);
+  buttonRight.setClickHandler(click);
+  
+  buttonUp.begin(UP_BUTTON_PIN);
+  buttonUp.setClickHandler(click);
+
+  buttonDown.begin(DOWN_BUTTON_PIN);
+  buttonDown.setClickHandler(click);
 }
 
+
 void loop() {
-  // Check each button and print its name if pressed
-  if (digitalRead(leftButtonPin) == LOW) {
-    Serial.println("Left button pressed");
-    delay(100); // Debounce delay
-  }
+  buttonLeft.loop();
+  buttonRight.loop();
+  buttonUp.loop();
+  buttonDown.loop();
+}
 
-  if (digitalRead(rightButtonPin) == LOW) {
-    Serial.println("Right button pressed");
-    delay(100); // Debounce delay
-  }
 
-  if (digitalRead(selectButtonPin) == LOW) {
-    Serial.println("Select button pressed");
-    delay(100); // Debounce delay
-  }
-
-  if (digitalRead(homeButtonPin) == LOW) {
-    Serial.println("Home button pressed");
-    delay(100); // Debounce delay
-  }
+void click(Button2& btn) {
+    if (btn == buttonLeft) {
+      Serial.println("Left clicked");
+    } else if (btn == buttonRight) {
+      Serial.println("Right clicked");
+    } else if (btn == buttonUp) {
+      Serial.println("Up clicked");
+    } else if (btn == buttonDown) {
+      Serial.println("Down clicked");
+    }
 }

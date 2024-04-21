@@ -4,37 +4,24 @@
 [![Continuous Integration](https://github.com/mathieucarbou/MycilaESPConnect/actions/workflows/ci.yml/badge.svg)](https://github.com/mathieucarbou/MycilaESPConnect/actions/workflows/ci.yml)
 [![PlatformIO Registry](https://badges.registry.platformio.org/packages/mathieucarbou/library/MycilaESPConnect.svg)](https://registry.platformio.org/libraries/mathieucarbou/MycilaESPConnect)
 
----
+Simple & Easy Network Manager for ESP32 with WiFi, Ethernet and Captive Portal support
 
-Simple & Easy WiFi Manager with Captive Portal for ESP32
-
-A simplistic approach to a WiFi Manager on ESP32 MCUs. Comes with captive portal to configure modules without any hassle.
-
----
-
-> This fork is based on [https://github.com/ayushsharma82/ESPConnect](https://github.com/ayushsharma82/ESPConnect).
-> I highly recommend looking at all OSS projects (and products) from [@ayushsharma82](https://github.com/ayushsharma82).
-> He is making great Arduino libraries.
+This fork is based on [https://github.com/ayushsharma82/ESPConnect](https://github.com/ayushsharma82/ESPConnect).
+I highly recommend looking at all OSS projects (and products) from [@ayushsharma82](https://github.com/ayushsharma82).
+He is making great Arduino libraries.
 
 ## Changes
 
 - **Logo**: user is responsible to provide a logo at this path: `/logo`
-
 - **AP Mode**: a new choice is added to the captive portal so that the user can remain in AP mode
-
 - **Network State Machine**: a better state machine is implemented to handle switching between Captive Portal, AP Mode and STA mode
-
 - **New API**: API has been completely rewritten
-
 - **Callback**: Listen to Network State changes
-
 - **Blocking and Non-blocking modes**: ESPConnect can be configured to loop and wait for the user to complete the Captive Portal steps, or the app can continue working in the background and the Captive Portal will be launched as needed.
-
 - **Flexible Configuration:** ESPConnect can either control the configuration persistence for you or let you do it
-
 - **mDNS / DNS Support**
-
 - **Ethernet support**
+- **Ready for Arduino 3 (ESP-IDF 5.1)**
 
 ## Ethernet Support
 
@@ -62,6 +49,7 @@ Flags for **wt32-eth01**:
 
 ```cpp
   -D ESPCONNECT_ETH_SUPPORT
+  -D ETH_PHY_ADDR=1
   -D ETH_PHY_POWER=16
 ```
 
@@ -69,12 +57,15 @@ Flags for **T-ETH-Lite ESP32 S3**:
 
 ```cpp
   -D ESPCONNECT_ETH_SUPPORT
-  -D ESPCONNECT_ETH_CS=9
-  -D ESPCONNECT_ETH_INT=13
-  -D ESPCONNECT_ETH_MISO=11
-  -D ESPCONNECT_ETH_MOSI=12
-  -D ESPCONNECT_ETH_RST=14
-  -D ESPCONNECT_ETH_SCLK=10
+  -D ETH_PHY_ADDR=1
+  -D ETH_PHY_CS=9
+  -D ETH_PHY_IRQ=13
+  -D ETH_PHY_RST=14
+  -D ETH_PHY_SPI_MISO=11
+  -D ETH_PHY_SPI_MOSI=12
+  -D ETH_PHY_SPI_SCK=10
+  ; can only be activated with ESP-IDF >= 5
+  ; -D ETH_PHY_TYPE=ETH_PHY_W5500
 ```
 
 Note: this project is making use of the `ETHClass` library from [Lewis He](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-Series/tree/master/lib/ETHClass)

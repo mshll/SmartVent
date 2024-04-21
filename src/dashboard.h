@@ -38,7 +38,7 @@ Card temperature(&dashboard, TEMPERATURE_CARD, "Temperature", "°C");
 Card humidity(&dashboard, HUMIDITY_CARD, "Humidity", "%");
 Card co2(&dashboard, AIR_CARD, "", "ppm");
 Card reset_wifi_btn(&dashboard, PUSH_BUTTON_CARD, "Reset WiFi", "wifi");
-Card button_test(&dashboard, BUTTON_CARD, "Button Test", "test");
+Card button_test(&dashboard, BUTTON_CARD, "Toggle OLED", "test");
 Card fan_speed(&dashboard, SLIDER_CARD, "Fan Speed", "speed");
 
 /* helper functions prototypes */

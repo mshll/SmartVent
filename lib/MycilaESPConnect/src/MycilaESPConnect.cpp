@@ -10,18 +10,18 @@
 #include <functional>
 
 #if defined(ESPCONNECT_ETH_SUPPORT)
-
-#if !defined(ESPCONNECT_ETH_ALT_IMPL) && (defined(ESPCONNECT_ETH_CS) || defined(ESPCONNECT_ETH_INT) || defined(ESPCONNECT_ETH_MISO) || defined(ESPCONNECT_ETH_MOSI) || defined(ESPCONNECT_ETH_RST) || defined(ESPCONNECT_ETH_SCLK))
-#define ESPCONNECT_ETH_ALT_IMPL 1
-#endif
-
-#ifdef ESPCONNECT_ETH_ALT_IMPL
+#if defined(ETH_PHY_SPI_SCK) && defined(ETH_PHY_SPI_MISO) && defined(ETH_PHY_SPI_MOSI) && defined(ETH_PHY_CS) && defined(ETH_PHY_IRQ) && defined(ETH_PHY_RST)
+#define ESPCONNECT_ETH_SPI_SUPPORT 1
+#if ESP_IDF_VERSION_MAJOR >= 5
+#include <ETH.h>
+#include <SPI.h>
+#else
 #include <ETHClass.h>
+#endif
 #else
 #include <ETH.h>
 #endif
-
-#endif // ESPCONNECT_ETH_SUPPORT
+#endif
 
 #include <espconnect_webpage.h>
 
@@ -61,7 +61,7 @@ ESPConnectMode ESPConnectClass::getMode() const {
     case ESPConnectState::NETWORK_DISCONNECTED:
     case ESPConnectState::NETWORK_RECONNECTING:
 #ifdef ESPCONNECT_ETH_SUPPORT
-      if (ETH.localIP()[0] != 0)
+      if (ETH.linkUp() && ETH.localIP()[0] != 0)
         return ESPConnectMode::ETH;
 #endif
       if (WiFi.localIP()[0] != 0)
@@ -79,7 +79,7 @@ const String ESPConnectClass::getMACAddress(ESPConnectMode mode) const {
       return WiFi.macAddress();
 #ifdef ESPCONNECT_ETH_SUPPORT
     case ESPConnectMode::ETH:
-      return ETH.macAddress();
+      return ETH.linkUp() ? ETH.macAddress() : emptyString;
 #endif
     default:
       return emptyString;
@@ -95,7 +95,7 @@ const IPAddress ESPConnectClass::getIPAddress(ESPConnectMode mode) const {
       return wifiMode == WIFI_MODE_STA ? WiFi.localIP() : IPAddress();
 #ifdef ESPCONNECT_ETH_SUPPORT
     case ESPConnectMode::ETH:
-      return ETH.localIP();
+      return ETH.linkUp() ? ETH.localIP() : IPAddress();
 #endif
     default:
       return IPAddress();
@@ -248,8 +248,11 @@ void ESPConnectClass::loop() {
 
   if (_state == ESPConnectState::PORTAL_COMPLETE || _state == ESPConnectState::PORTAL_TIMEOUT) {
     _stopAP();
-    if (_autoRestart)
+    if (_autoRestart) {
+      ESP_LOGW(TAG, "Auto Restart of ESP...");
       ESP.restart();
+    } else
+      _setState(ESPConnectState::NETWORK_ENABLED);
   }
 }
 
@@ -312,15 +315,21 @@ void ESPConnectClass::_startEthernet() {
 #endif
 
   ESP_LOGI(TAG, "Starting Ethernet...");
-
-#ifdef ESPCONNECT_ETH_ALT_IMPL
-  if (!ETH.beginSPI(ESPCONNECT_ETH_MISO, ESPCONNECT_ETH_MOSI, ESPCONNECT_ETH_SCLK, ESPCONNECT_ETH_CS, ESPCONNECT_ETH_RST, ESPCONNECT_ETH_INT)) {
+#if defined(ESPCONNECT_ETH_SPI_SUPPORT)
+#if ESP_IDF_VERSION_MAJOR >= 5
+  // https://github.com/espressif/arduino-esp32/tree/master/libraries/Ethernet/examples
+  SPI.begin(ETH_PHY_SPI_SCK, ETH_PHY_SPI_MISO, ETH_PHY_SPI_MOSI);
+  if (!ETH.begin(ETH_PHY_TYPE, ETH_PHY_ADDR, ETH_PHY_CS, ETH_PHY_IRQ, ETH_PHY_RST, SPI)) {
     ESP_LOGE(TAG, "ETH failed to start!");
   }
 #else
+  if (!ETH.beginSPI(ETH_PHY_SPI_MISO, ETH_PHY_SPI_MOSI, ETH_PHY_SPI_SCK, ETH_PHY_CS, ETH_PHY_RST, ETH_PHY_IRQ)) {
+    ESP_LOGE(TAG, "ETH failed to start!");
+  }
+#endif
+#else
   if (!ETH.begin()) {
     ESP_LOGE(TAG, "ETH failed to start!");
-    _setState(ESPConnectState::NETWORK_ENABLED);
   }
 #endif
 
@@ -394,39 +403,59 @@ void ESPConnectClass::_enableCaptivePortal() {
   WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
   WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
   WiFi.scanNetworks(true);
+  _scanStart = millis();
 
   if (_scanHandler == nullptr) {
     _scanHandler = &_httpd->on("/espconnect/scan", HTTP_GET, [&](AsyncWebServerRequest* request) {
-    AsyncJsonResponse* response = new AsyncJsonResponse(true);
-    JsonArray json = response->getRoot();
-    int n = WiFi.scanComplete();
-    if (n == WIFI_SCAN_FAILED)
-    {
-      WiFi.scanNetworks(true);
-      return request->send(202);
-    }
-    else if (n == WIFI_SCAN_RUNNING)
-      return request->send(202);
-    else
-    {
-      for (int i = 0; i < n; ++i)
-      {
-#if ARDUINOJSON_VERSION_MAJOR == 6
-        JsonObject entry = json.createNestedObject();
-#else
-        JsonObject entry = json.add<JsonObject>();
-#endif
-        entry["name"] = WiFi.SSID(i);
-        entry["rssi"] = WiFi.RSSI(i);
-        entry["signal"] = _wifiSignalQuality(WiFi.RSSI(i));
-        entry["open"] = WiFi.encryptionType(i) == WIFI_AUTH_OPEN;
-      }
-      WiFi.scanDelete();
-      if (WiFi.scanComplete() == WIFI_SCAN_FAILED)
+      int n = WiFi.scanComplete();
+
+      // scan still running ? wait...
+      if (n == WIFI_SCAN_RUNNING) {
+        return request->send(202);
+
+        // scan error or finished with no result ?
+      } else if (n == 0 || n == WIFI_SCAN_FAILED) {
+        // timeout ?
+        const bool timedOut = millis() - _scanStart > _scanTimeout;
+
+        // re-scan
+        WiFi.scanDelete();
         WiFi.scanNetworks(true);
-    }
-    response->setLength();
-    request->send(response); });
+        _scanStart = millis();
+
+        // send empty json response, to let the user choose AP mode if timeout, or still ask client to wait
+        if (timedOut) {
+          AsyncJsonResponse* response = new AsyncJsonResponse(true);
+          response->setLength();
+          request->send(response);
+        } else {
+          return request->send(202);
+        }
+
+        // scan results ?
+      } else {
+        AsyncJsonResponse* response = new AsyncJsonResponse(true);
+        JsonArray json = response->getRoot();
+        // we have some results
+        for (int i = 0; i < n; ++i) {
+#if ARDUINOJSON_VERSION_MAJOR == 6
+          JsonObject entry = json.createNestedObject();
+#else
+          JsonObject entry = json.add<JsonObject>();
+#endif
+          entry["name"] = WiFi.SSID(i);
+          entry["rssi"] = WiFi.RSSI(i);
+          entry["signal"] = _wifiSignalQuality(WiFi.RSSI(i));
+          entry["open"] = WiFi.encryptionType(i) == WIFI_AUTH_OPEN;
+        }
+        // clean up and start scanning again in background
+        WiFi.scanDelete();
+        WiFi.scanNetworks(true);
+        _scanStart = millis();
+        response->setLength();
+        request->send(response);
+      }
+    });
   }
 
   if (_connectHandler == nullptr) {
@@ -548,7 +577,7 @@ void ESPConnectClass::_onWiFiEvent(WiFiEvent_t event) {
     case ARDUINO_EVENT_WIFI_STA_LOST_IP:
       if (_state == ESPConnectState::NETWORK_CONNECTED) {
 #ifdef ESPCONNECT_ETH_SUPPORT
-        if (ETH.localIP()[0] != 0)
+        if (ETH.linkUp() && ETH.localIP()[0] != 0)
           return;
 #endif
         ESP_LOGD(TAG, "[%s] WiFiEvent: ARDUINO_EVENT_WIFI_STA_LOST_IP", getStateName());
@@ -559,7 +588,7 @@ void ESPConnectClass::_onWiFiEvent(WiFiEvent_t event) {
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
       if (_state == ESPConnectState::NETWORK_CONNECTED) {
 #ifdef ESPCONNECT_ETH_SUPPORT
-        if (ETH.localIP()[0] != 0)
+        if (ETH.linkUp() && ETH.localIP()[0] != 0)
           return;
 #endif
         ESP_LOGD(TAG, "[%s] WiFiEvent: ARDUINO_EVENT_WIFI_STA_DISCONNECTED", getStateName());

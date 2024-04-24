@@ -49,6 +49,7 @@ MenuItem menuItems[MENU_ITEMS_COUNT] = {
     {"Fan Speed",{0 /*0:Off, 1:Slow,2:Fast, 3:Fastest*/}},
     {"Idle Time",{0 /*Default Mode 0: 30 Seconds*/}},
     {"Time",{0 /*Hour*/, 0 /*Minutes*/, 0 /*AM/PM*/}}
+    //{"Sleep", {0 /*Idle Flag*/}}
 };
 int currentMenuItem = 0;  // Current menu item index
 int selectedMenuItem = 0; // 0 Means Not Selected To lock on the Menu must have + 1
@@ -73,18 +74,18 @@ void longClickDetected(Button2& btn) {
 }
 void button_handler(Button2& btn) {
     // Reset Timer Interrupt for idle.
-    /* idle_flag = 1;
-    timerAlarmDisable(timer);
-    timerAlarmWrite(timer, IDLE_TIME * 1000000, false); // Set alarm value to seconds, disable auto-reload
-    timerAlarmEnable(timer); */
+    idle_flag = 1;
+    // timerAlarmDisable(timer);
+    // timerAlarmWrite(timer, IDLE_TIME * 1000000, false); // Set alarm value to seconds, disable auto-reload
+    // timerAlarmEnable(timer);
     
 
     /* UPDATES MENU NAVIGATION */
     if (selectedMenuItem == 0) {
         if (btn.getPin() == UP_BUTTON_PIN) {
-                Serial.println("Up\n");
-                currentMenuItem = (currentMenuItem - 1 + sizeof(menuItems) / sizeof(menuItems[0])) % (sizeof(menuItems) / sizeof(menuItems[0]));
-            }
+            Serial.println("Up\n");
+            currentMenuItem = (currentMenuItem - 1 + sizeof(menuItems) / sizeof(menuItems[0])) % (sizeof(menuItems) / sizeof(menuItems[0]));
+        }
         if (btn.getPin() == DOWN_BUTTON_PIN) {
             Serial.println("Down\n");
             currentMenuItem = (currentMenuItem + 1) % (sizeof(menuItems) / sizeof(menuItems[0]));
@@ -297,23 +298,52 @@ void button_loops() {
 }
 
 /* DISPLAY OPTIONS */
-void idle_display(void){    // display_main_screen (from oled.h)
-    u8g2.clearBuffer();					// clear the internal memory
-    u8g2.setFont(u8g2_font_ncenB08_tr);	// choose a suitable font
-    u8g2.drawStr(0,10,"Displays Temperatures");	// write something to the internal memory
-    u8g2.sendBuffer();					// transfer internal memory to the display
-    delay(1000); 
+// Idle Display - display_main_screen in oled.h
+void idle_display(void){
+    // Clear Display
+    u8g2.clearBuffer();
+    // Change Font.
+    u8g2.setFont(u8g2_font_ncenB08_tr);
+    u8g2.drawStr(0,20,"Idle Display");
+    u8g2.drawStr(0,40,"Displays Temperatures");
+    u8g2.sendBuffer(); 
+    // DON'T PUT DELAY FOR FASTER BUTTONS.
     return; 
 }
 
-
+// Initialize the Display when Powered on
 void start_display(void){
-    u8g2.clearBuffer();					    // clear the internal memory
-    u8g2.setFont(u8g2_font_ncenB08_tr);	    // choose a suitable font
-    u8g2.drawStr(OLED_WIDTH/2,OLED_HEIGHT/2,"Auto Pilot");	// write something to the internal memory
-    u8g2.sendBuffer();					    // transfer internal memory to the display
-    delay(START_DELAY*1000);                  //
+    // Clear Display.
+    u8g2.clearBuffer();
+    // Change Font.
+    u8g2.setFont(u8g2_font_ncenB08_tr);
+    u8g2.drawStr(OLED_WIDTH/2,OLED_HEIGHT/2,"Smart Vent");
+    u8g2.drawStr(OLED_WIDTH/2,OLED_HEIGHT/2 + 20,"Auto Pilot");     // Possibly change static 20 into Smart Height.
+    u8g2.sendBuffer();
+    // Delay so logo display is seen.
+    delay(START_DELAY*1000);
     return;
+}
+
+// Display Item Menu
+void display_select_menu(int menu_num) {
+    // Display Upper Item if not empty.
+    if ((menu_num-1) >= 0) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth(menuItems[menu_num-1].name )) / 2;
+        int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
+        u8g2.drawStr(centerX, centerY, menuItems[menu_num-1].name);
+    }
+    // Display Center Item
+    int centerX = (OLED_WIDTH - u8g2.getStrWidth(menuItems[menu_num].name )) / 2;
+    int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
+    u8g2.drawStr(centerX, centerY, menuItems[menu_num].name);
+    
+    // Display Down Item if not empty.
+    if ((menu_num+1) < MENU_ITEMS_COUNT) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth(menuItems[menu_num+1].name )) / 2;
+        int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
+        u8g2.drawStr(centerX, centerY, menuItems[menu_num+1].name);
+    }
 }
 
 /*** SETUP ***/
@@ -322,17 +352,20 @@ void setup() {
     
     u8g2.begin();
     
-    timer = timerBegin(0, 80, true); // Initialize timer
-
+    
     delay(50);
 
     Serial.println("\nSmart Vent \n");
 
+    // Initialize Buttons
     init_buttons();
     /* 
+    // Initialize Timer for idle counter.
+    timer = timerBegin(0, 80, true); // Initialize timer
     timerAttachInterrupt(timer, &idle_on, true); // Attach interrupt
     timerAlarmWrite(timer, IDLE_TIME * 1000000, false); // Set alarm value to seconds, disable auto-reload
-    timerAlarmEnable(timer); // Enable timer alarm */
+    timerAlarmEnable(timer); // Enable timer alarm 
+    */
 
     start_display();
 }
@@ -340,76 +373,92 @@ void setup() {
 
 /*** LOOP ***/
 void loop() {
-
-  // Clear the display
+  // NAVIGATION SYSTEM
   u8g2.firstPage();
   do {
+    // Check for buttons pushes.
     button_loops();
+    
+    // Clear Display
     u8g2.clearBuffer();
+
+    // Set font
     u8g2.setFont(u8g2_font_ncenB08_tr);	// primary font
     //u8g.setFont(u8g_font_10x20);  // secondary font
-    // Selecting Menu Item
+    
+    // Checks for Idle Flag.
     if (idle_flag == 0){
-        // idle_display();
-        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Idle Display")) / 2;
-        int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
-        u8g2.drawStr(centerX, centerY, "Idle Display");	// write something to the internal memory
+        // Display Idle Display.
+        // TODO: Change this to display data.
+        idle_display();
     }
     else {
+        // Selecting Menu Options
         if (selectedMenuItem == 0){
-                // Center the text horizontally and vertically
-                int centerX = (OLED_WIDTH - u8g2.getStrWidth(menuItems[currentMenuItem].name )) / 2;
-                int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
-                u8g2.drawStr(centerX, centerY, menuItems[currentMenuItem].name);	// write something to the internal memory
-            }
+            // TODO: Test display_select_menu(selectedMenuItem) function
+            int centerX = (OLED_WIDTH - u8g2.getStrWidth(menuItems[currentMenuItem].name )) / 2;
+            int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
+            u8g2.drawStr(centerX, centerY, menuItems[currentMenuItem].name);
+        }
+        // Selected CO2 Level Options
         if (selectedMenuItem == 1){
-                // Center the text horizontally and vertically
-                char intStrBuffer[20];
-                itoa( menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
-                int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 4;
-                int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
-                u8g2.drawStr(centerX, centerY, intStrBuffer);	// write something to the internal memory
-                itoa( menuItems[selectedMenuItem-1].values[1], intStrBuffer, 10);
-                int centerX2 = ((OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 4) + (OLED_WIDTH / 2);
-                u8g2.drawStr(centerX2, centerY, intStrBuffer);	// write something to the internal memory
-            }
+            // TODO: Add Static Image format for CO2 Levels.
+            char intStrBuffer[20];
+            // Lower Level
+            itoa(menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
+            int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 4;
+            int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
+            u8g2.drawStr(centerX, centerY, intStrBuffer);
+            // Higher Level
+            itoa(menuItems[selectedMenuItem-1].values[1], intStrBuffer, 10);
+            int centerX2 = ((OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 4) + (OLED_WIDTH / 2);
+            u8g2.drawStr(centerX2, centerY, intStrBuffer);
+        }
+        // Selected Fan Speed Option
         if (selectedMenuItem == 2){
-                // Center the text horizontally and vertically
-                char intStrBuffer[20];
-                itoa( menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
-                int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 2;
-                int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
-                u8g2.drawStr(centerX, centerY, intStrBuffer);	// write something to the internal memory
-            }
+            // TODO: Add Static Image format for Fan Speed Options.
+            // TODO: Change the display to Off, Low, Medium 
+            char intStrBuffer[20];
+            itoa(menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
+            int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 2;
+            int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
+            u8g2.drawStr(centerX, centerY, intStrBuffer);
+        }
+        // Selected Idle Time Option
         if (selectedMenuItem == 3){
-                // Center the text horizontally and vertically
-                char intStrBuffer[20];
-                itoa( menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
-                int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 2;
-                int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
-                u8g2.drawStr(centerX, centerY, intStrBuffer);	// write something to the internal memory
-            }
-        
+            // TODO: Change formating to display 5s, 10s, 30s, 60s.
+            char intStrBuffer[20];
+            itoa(menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
+            int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 2;
+            int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
+            u8g2.drawStr(centerX, centerY, intStrBuffer);
+        }
+        // Selected Time and Date Option
         if (selectedMenuItem == 4){
-                // Center the text horizontally and vertically
-                char intStrBuffer[20];
-                itoa( menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
-                int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 4;
-                int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
-                u8g2.drawStr(centerX, centerY, intStrBuffer);	// write something to the internal memory
-                itoa( menuItems[selectedMenuItem-1].values[1], intStrBuffer, 10);
-                int centerX2 = ((OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 4) + (OLED_WIDTH / 3);
-                u8g2.drawStr(centerX2, centerY, intStrBuffer);	// write something to the internal memory
-                if (menuItems[selectedMenuItem-1].values[2] == 0) {
-                    u8g2.drawStr(centerX + (OLED_WIDTH / 2), centerY, "AM");	// write something to the internal memory
-                }
-                else {
-                    u8g2.drawStr(centerX + (OLED_WIDTH / 2), centerY, "PM");	// write something to the internal memory
-                }
+            // TODO: Change the Image format (with :'s).
+            char intStrBuffer[20];
+            // Hour
+            itoa( menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
+            int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 4;
+            int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
+            u8g2.drawStr(centerX, centerY, intStrBuffer);	// write something to the internal memory
+            // Minutes
+            itoa( menuItems[selectedMenuItem-1].values[1], intStrBuffer, 10);
+            int centerX2 = ((OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 4) + (OLED_WIDTH / 3);
+            u8g2.drawStr(centerX2, centerY, intStrBuffer);	// write something to the internal memory
+            // AM or PM
+            if (menuItems[selectedMenuItem-1].values[2] == 0) {
+                u8g2.drawStr(centerX + (OLED_WIDTH / 2), centerY, "AM");
             }
+            else {
+                u8g2.drawStr(centerX + (OLED_WIDTH / 2), centerY, "PM");
+            }
+        }
     }
     
-    
-    u8g2.sendBuffer();					// transfer internal memory to the display
+    // TODO: Put code to update to Dashboard.
+
+    // Update Display
+    u8g2.sendBuffer();
   } while (u8g2.nextPage());  
 }

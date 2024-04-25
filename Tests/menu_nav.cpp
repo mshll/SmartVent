@@ -43,13 +43,13 @@ struct MenuItem {
     const char* name;
     int values[3]; // Assuming each menu item can have up to 3 values
 };
-const int MENU_ITEMS_COUNT = 4;
+const int MENU_ITEMS_COUNT = 5;
 MenuItem menuItems[MENU_ITEMS_COUNT] = {
     {"CO2 Levels",{600 /*Low*/, 1000 /*High*/}},
     {"Fan Speed",{0 /*0:Off, 1:Slow,2:Fast, 3:Fastest*/}},
     {"Idle Time",{0 /*Default Mode 0: 30 Seconds*/}},
-    {"Time",{0 /*Hour*/, 0 /*Minutes*/, 0 /*AM/PM*/}}
-    //{"Sleep", {0 /*Idle Flag*/}}
+    {"Time",{0 /*Hour*/, 0 /*Minutes*/, 0 /*AM/PM*/}},
+    {"Sleep", {1 /*Idle Flag*/}}
 };
 int currentMenuItem = 0;  // Current menu item index
 int selectedMenuItem = 0; // 0 Means Not Selected To lock on the Menu must have + 1
@@ -60,11 +60,6 @@ int idle_flag = 1; // 0=idle; 1=active_menu
 hw_timer_t *timer = NULL;
 
 /*** FUNCTIONS ***/
-void idle_on(void){
-    Serial.print("\n Idling... \n");
-    idle_flag = 0;
-    return;
-}
 void longClickDetected(Button2& btn) {
     Serial.println("long click detected");
     Serial.print("on button "); 
@@ -74,183 +69,199 @@ void longClickDetected(Button2& btn) {
 }
 void button_handler(Button2& btn) {
     // Reset Timer Interrupt for idle.
-    idle_flag = 1;
     // timerAlarmDisable(timer);
     // timerAlarmWrite(timer, IDLE_TIME * 1000000, false); // Set alarm value to seconds, disable auto-reload
     // timerAlarmEnable(timer);
     
 
-    /* UPDATES MENU NAVIGATION */
-    if (selectedMenuItem == 0) {
-        if (btn.getPin() == UP_BUTTON_PIN) {
-            Serial.println("Up\n");
-            currentMenuItem = (currentMenuItem - 1 + sizeof(menuItems) / sizeof(menuItems[0])) % (sizeof(menuItems) / sizeof(menuItems[0]));
-        }
-        if (btn.getPin() == DOWN_BUTTON_PIN) {
-            Serial.println("Down\n");
-            currentMenuItem = (currentMenuItem + 1) % (sizeof(menuItems) / sizeof(menuItems[0]));
-        }
-        if (btn.getPin() == RIGHT_BUTTON_PIN) {
-            Serial.println("Select\n");
-            selectedMenuItem = currentMenuItem + 1;
-            selectModifyItem = 0;
-        }
+    // Button to get out of Idle without jumping straight to it.
+    if (idle_flag == 1) {
+        idle_flag = 0;
+        selectedMenuItem = 0;
+        currentMenuItem = 0;
+        selectModifyItem = 0;
     }
-    // CO2 Level Menu
-    else if (selectedMenuItem == 1) {
-        if (btn.getPin() == RIGHT_BUTTON_PIN) {
-            Serial.println("Next\n");
-            selectModifyItem = (0+1) % ((sizeof(menuItems[selectedMenuItem-1].values) / sizeof(menuItems[selectedMenuItem-1].values[0]))-1);
-            Serial.println(selectModifyItem);
+    else {
+        /* UPDATES MENU NAVIGATION */
+        if (selectedMenuItem == 0) {
+            if (btn.getPin() == UP_BUTTON_PIN) {
+                Serial.println("Up\n");
+                currentMenuItem = (currentMenuItem - 1 + sizeof(menuItems) / sizeof(menuItems[0])) % (sizeof(menuItems) / sizeof(menuItems[0]));
+            }
+            if (btn.getPin() == DOWN_BUTTON_PIN) {
+                Serial.println("Down\n");
+                currentMenuItem = (currentMenuItem + 1) % (sizeof(menuItems) / sizeof(menuItems[0]));
+            }
+            if (btn.getPin() == RIGHT_BUTTON_PIN) {
+                Serial.println("Select\n");
+                selectedMenuItem = currentMenuItem + 1;
+                selectModifyItem = 0;
+            }
         }
-        if (btn.getPin() == LEFT_BUTTON_PIN) {
-            Serial.println("Back\n");
+        // CO2 Level Menu
+        else if (selectedMenuItem == 1) {
+            if (btn.getPin() == RIGHT_BUTTON_PIN) {
+                Serial.println("Next\n");
+                selectModifyItem = (0+1) % ((sizeof(menuItems[selectedMenuItem-1].values) / sizeof(menuItems[selectedMenuItem-1].values[0]))-1);
+                Serial.println(selectModifyItem);
+            }
+            if (btn.getPin() == LEFT_BUTTON_PIN) {
+                Serial.println("Back\n");
+                selectedMenuItem = 0;
+                selectModifyItem = 0;
+            }
+            if (btn.getPin() == UP_BUTTON_PIN) {
+                Serial.println("Up\n");
+                menuItems[selectedMenuItem-1].values[selectModifyItem] += 10;
+                Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
+                Serial.println();
+                }
+            if (btn.getPin() == DOWN_BUTTON_PIN) {
+                menuItems[selectedMenuItem-1].values[selectModifyItem] -= 10;
+                Serial.println("Down\n");
+                Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
+                Serial.println();
+            }
+        }
+        // Fan Speed Menu
+        else if (selectedMenuItem == 2) {
+            if (btn.getPin() == RIGHT_BUTTON_PIN) {
+                Serial.println("Selected\n");
+                selectedMenuItem = 0;
+                selectModifyItem = 0;
+            }
+            if (btn.getPin() == LEFT_BUTTON_PIN) {
+                Serial.println("Back\n");
+                selectedMenuItem = 0;
+                selectModifyItem = 0;
+            }
+            if (btn.getPin() == UP_BUTTON_PIN) {
+                Serial.println("Up\n");
+                if (menuItems[selectedMenuItem-1].values[selectModifyItem] >= 3) {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 3;
+                }
+                else {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
+                }
+                Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
+                Serial.println();
+                }
+            if (btn.getPin() == DOWN_BUTTON_PIN) {
+                if (menuItems[selectedMenuItem-1].values[selectModifyItem] <= 0) {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 0;
+                }
+                else {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] -= 1;
+                }
+                Serial.println("Down\n");
+                Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
+                Serial.println();
+            }
+        }
+        // Idle Time Menu
+        else if (selectedMenuItem == 3) {
+            if (btn.getPin() == RIGHT_BUTTON_PIN) {
+                Serial.println("Selected\n");
+                selectedMenuItem = 0;
+                selectModifyItem = 0;
+            }
+            if (btn.getPin() == LEFT_BUTTON_PIN) {
+                Serial.println("Back\n");
+                selectedMenuItem = 0;
+                selectModifyItem = 0;
+            }
+            if (btn.getPin() == UP_BUTTON_PIN) {
+                Serial.println("Up\n");
+                if (menuItems[selectedMenuItem-1].values[selectModifyItem] >= 3) {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 3;
+                }
+                else {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
+                }
+                Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
+                Serial.println();
+                }
+            if (btn.getPin() == DOWN_BUTTON_PIN) {
+                if (menuItems[selectedMenuItem-1].values[selectModifyItem] <= 0) {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 0;
+                }
+                else {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] -= 1;
+                }
+                Serial.println("Down\n");
+                Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
+                Serial.println();
+            }
+        }
+        // Time Menu
+        else if (selectedMenuItem == 4) {
+            if (btn.getPin() == RIGHT_BUTTON_PIN) {
+                Serial.println("Next\n");
+                selectModifyItem = (selectModifyItem+1) % ((sizeof(menuItems[selectedMenuItem-1].values) / sizeof(menuItems[selectedMenuItem-1].values[0])));
+                Serial.println(selectModifyItem);
+            }
+            if (btn.getPin() == LEFT_BUTTON_PIN) {
+                Serial.println("Back\n");
+                selectedMenuItem = 0;
+                selectModifyItem = 0;
+            }
+            if (selectModifyItem == 0 /*Hour*/) {
+                if (btn.getPin() == UP_BUTTON_PIN) {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
+                    if (menuItems[selectedMenuItem-1].values[selectModifyItem] > 12) {
+                        menuItems[selectedMenuItem-1].values[selectModifyItem] = 1;
+                    }
+                    }
+                if (btn.getPin() == DOWN_BUTTON_PIN) {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] -= 1;
+                    if (menuItems[selectedMenuItem-1].values[selectModifyItem] < 1) {
+                        menuItems[selectedMenuItem-1].values[selectModifyItem] = 12;
+                    }
+                }
+            }
+            else if (selectModifyItem == 1 /*Minute*/) {
+                if (btn.getPin() == UP_BUTTON_PIN) {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
+                    if (menuItems[selectedMenuItem-1].values[selectModifyItem] > 59) {
+                        menuItems[selectedMenuItem-1].values[selectModifyItem] = 0;
+                    }
+                    }
+                if (btn.getPin() == DOWN_BUTTON_PIN) {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] -= 1;
+                    if (menuItems[selectedMenuItem-1].values[selectModifyItem] < 0) {
+                        menuItems[selectedMenuItem-1].values[selectModifyItem] = 59;
+                    }
+                }
+            }
+            else if (selectModifyItem == 2 /*AM/PM*/) {
+                if (btn.getPin() == UP_BUTTON_PIN) {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
+                    if (menuItems[selectedMenuItem-1].values[selectModifyItem] > 1) {
+                        menuItems[selectedMenuItem-1].values[selectModifyItem] = 0;
+                    }
+                    }
+                if (btn.getPin() == DOWN_BUTTON_PIN) {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] -= 1;
+                    if (menuItems[selectedMenuItem-1].values[selectModifyItem] < 0) {
+                        menuItems[selectedMenuItem-1].values[selectModifyItem] = 1;
+                    }
+                }
+            }
+            Serial.println("Time Updated!");
+            Serial.println();
+        }
+        // Sleep Button
+        if (selectedMenuItem == 5){
+            menuItems[selectedMenuItem-1].values[0] = 1;
+            Serial.println(menuItems[selectedMenuItem-1].values[0]);
+            Serial.println();
             selectedMenuItem = 0;
+            currentMenuItem = 0;
             selectModifyItem = 0;
-        }
-        if (btn.getPin() == UP_BUTTON_PIN) {
-            Serial.println("Up\n");
-            menuItems[selectedMenuItem-1].values[selectModifyItem] += 10;
-            Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
-            Serial.println();
-            }
-        if (btn.getPin() == DOWN_BUTTON_PIN) {
-            menuItems[selectedMenuItem-1].values[selectModifyItem] -= 10;
-            Serial.println("Down\n");
-            Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
-            Serial.println();
-        }
-    }
-    // Fan Speed Menu
-    else if (selectedMenuItem == 2) {
-        if (btn.getPin() == RIGHT_BUTTON_PIN) {
-            Serial.println("Selected\n");
-            selectedMenuItem = 0;
-            selectModifyItem = 0;
-        }
-        if (btn.getPin() == LEFT_BUTTON_PIN) {
-            Serial.println("Back\n");
-            selectedMenuItem = 0;
-            selectModifyItem = 0;
-        }
-        if (btn.getPin() == UP_BUTTON_PIN) {
-            Serial.println("Up\n");
-            if (menuItems[selectedMenuItem-1].values[selectModifyItem] >= 3) {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] = 3;
-            }
-            else {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
-            }
-            Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
-            Serial.println();
-            }
-        if (btn.getPin() == DOWN_BUTTON_PIN) {
-            if (menuItems[selectedMenuItem-1].values[selectModifyItem] <= 0) {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] = 0;
-            }
-            else {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] -= 1;
-            }
-            Serial.println("Down\n");
-            Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
-            Serial.println();
-        }
-    }
-    // Idle Time Menu
-    else if (selectedMenuItem == 3) {
-        if (btn.getPin() == RIGHT_BUTTON_PIN) {
-            Serial.println("Selected\n");
-            selectedMenuItem = 0;
-            selectModifyItem = 0;
-        }
-        if (btn.getPin() == LEFT_BUTTON_PIN) {
-            Serial.println("Back\n");
-            selectedMenuItem = 0;
-            selectModifyItem = 0;
-        }
-        if (btn.getPin() == UP_BUTTON_PIN) {
-            Serial.println("Up\n");
-            if (menuItems[selectedMenuItem-1].values[selectModifyItem] >= 3) {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] = 3;
-            }
-            else {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
-            }
-            Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
-            Serial.println();
-            }
-        if (btn.getPin() == DOWN_BUTTON_PIN) {
-            if (menuItems[selectedMenuItem-1].values[selectModifyItem] <= 0) {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] = 0;
-            }
-            else {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] -= 1;
-            }
-            Serial.println("Down\n");
-            Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
-            Serial.println();
+            idle_flag = 1;
         }
     }
     
-    // Time Menu
-    else if (selectedMenuItem == 4) {
-        if (btn.getPin() == RIGHT_BUTTON_PIN) {
-            Serial.println("Next\n");
-            selectModifyItem = (selectModifyItem+1) % ((sizeof(menuItems[selectedMenuItem-1].values) / sizeof(menuItems[selectedMenuItem-1].values[0])));
-            Serial.println(selectModifyItem);
-        }
-        if (btn.getPin() == LEFT_BUTTON_PIN) {
-            Serial.println("Back\n");
-            selectedMenuItem = 0;
-            selectModifyItem = 0;
-        }
-        if (selectModifyItem == 0 /*Hour*/) {
-            if (btn.getPin() == UP_BUTTON_PIN) {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
-                if (menuItems[selectedMenuItem-1].values[selectModifyItem] > 12) {
-                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 1;
-                }
-                }
-            if (btn.getPin() == DOWN_BUTTON_PIN) {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] -= 1;
-                if (menuItems[selectedMenuItem-1].values[selectModifyItem] < 1) {
-                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 12;
-                }
-            }
-            Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
-            Serial.println();
-        }
-        else if (selectModifyItem == 1 /*Minute*/) {
-            if (btn.getPin() == UP_BUTTON_PIN) {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
-                if (menuItems[selectedMenuItem-1].values[selectModifyItem] > 59) {
-                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 0;
-                }
-                }
-            if (btn.getPin() == DOWN_BUTTON_PIN) {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] -= 1;
-                if (menuItems[selectedMenuItem-1].values[selectModifyItem] < 0) {
-                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 59;
-                }
-            }
-        }
-        else if (selectModifyItem == 2 /*AM/PM*/) {
-            if (btn.getPin() == UP_BUTTON_PIN) {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
-                if (menuItems[selectedMenuItem-1].values[selectModifyItem] > 1) {
-                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 0;
-                }
-                }
-            if (btn.getPin() == DOWN_BUTTON_PIN) {
-                menuItems[selectedMenuItem-1].values[selectModifyItem] -= 1;
-                if (menuItems[selectedMenuItem-1].values[selectModifyItem] < 0) {
-                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 1;
-                }
-            }
-        }
-        Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
-        Serial.println();
-    }
 }
 void init_buttons(){
     // LEFT BUTTON
@@ -308,7 +319,6 @@ void idle_display(void){
     u8g2.drawStr(0,40,"Displays Temperatures");
     u8g2.sendBuffer(); 
     // DON'T PUT DELAY FOR FASTER BUTTONS.
-    return; 
 }
 
 // Initialize the Display when Powered on
@@ -322,7 +332,6 @@ void start_display(void){
     u8g2.sendBuffer();
     // Delay so logo display is seen.
     delay(START_DELAY*1000);
-    return;
 }
 
 // Display Item Menu
@@ -387,9 +396,10 @@ void loop() {
     //u8g.setFont(u8g_font_10x20);  // secondary font
     
     // Checks for Idle Flag.
-    if (idle_flag == 0){
+    if (idle_flag == 1){
         // Display Idle Display.
         // TODO: Change this to display data.
+        Serial.println("Idling...\n");
         idle_display();
     }
     else {
@@ -456,7 +466,7 @@ void loop() {
         }
     }
     
-    // TODO: Put code to update to Dashboard.
+    // TODO: Put code to update to Dashboard. ** In this location it MUST have no delays.
 
     // Update Display
     u8g2.sendBuffer();

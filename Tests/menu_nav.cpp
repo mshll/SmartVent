@@ -45,8 +45,8 @@ struct MenuItem {
 };
 const int MENU_ITEMS_COUNT = 5;
 MenuItem menuItems[MENU_ITEMS_COUNT] = {
-    {"CO2 Levels",{600 /*Low*/, 1000 /*High*/}},
-    {"Fan Speed",{0 /*0:Off, 1:Slow,2:Fast, 3:Fastest*/}},
+    {"CO2 Levels",{800 /*Low*/, 1200 /*High*/}},
+    {"Fan Speed",{0 /*0:Off, 1:Slow, 2:Fast, 3:Max*/}},
     {"Idle Time",{0 /*Default Mode 0: 30 Seconds*/}},
     {"Time",{0 /*Hour*/, 0 /*Minutes*/, 0 /*AM/PM*/}},
     {"Sleep", {1 /*Idle Flag*/}}
@@ -54,6 +54,9 @@ MenuItem menuItems[MENU_ITEMS_COUNT] = {
 int currentMenuItem = 0;  // Current menu item index
 int selectedMenuItem = 0; // 0 Means Not Selected To lock on the Menu must have + 1
 int selectModifyItem = 0;
+
+/* Number of Fan Speed options. **Not including OFF. */
+const int MAX_NUM_FAN_SPEED = 3;    
 
 
 int idle_flag = 1; // 0=idle; 1=active_menu
@@ -74,8 +77,9 @@ void button_handler(Button2& btn) {
     // timerAlarmEnable(timer);
     
 
-    // Button to get out of Idle without jumping straight to it.
+    // One button push out of Idle.
     if (idle_flag == 1) {
+        Serial.println("Waking Up...\n");
         idle_flag = 0;
         selectedMenuItem = 0;
         currentMenuItem = 0;
@@ -85,40 +89,47 @@ void button_handler(Button2& btn) {
         /* UPDATES MENU NAVIGATION */
         if (selectedMenuItem == 0) {
             if (btn.getPin() == UP_BUTTON_PIN) {
-                Serial.println("Up\n");
                 currentMenuItem = (currentMenuItem - 1 + sizeof(menuItems) / sizeof(menuItems[0])) % (sizeof(menuItems) / sizeof(menuItems[0]));
+                
+                Serial.println("Up\n");
             }
             if (btn.getPin() == DOWN_BUTTON_PIN) {
-                Serial.println("Down\n");
                 currentMenuItem = (currentMenuItem + 1) % (sizeof(menuItems) / sizeof(menuItems[0]));
+
+                Serial.println("Down\n");
             }
             if (btn.getPin() == RIGHT_BUTTON_PIN) {
-                Serial.println("Select\n");
                 selectedMenuItem = currentMenuItem + 1;
                 selectModifyItem = 0;
+
+                Serial.println("Select\n");
             }
         }
         // CO2 Level Menu
         else if (selectedMenuItem == 1) {
             if (btn.getPin() == RIGHT_BUTTON_PIN) {
-                Serial.println("Next\n");
                 selectModifyItem = (0+1) % ((sizeof(menuItems[selectedMenuItem-1].values) / sizeof(menuItems[selectedMenuItem-1].values[0]))-1);
+
+                Serial.println("Next\n");
                 Serial.println(selectModifyItem);
             }
             if (btn.getPin() == LEFT_BUTTON_PIN) {
-                Serial.println("Back\n");
                 selectedMenuItem = 0;
                 selectModifyItem = 0;
+
+                Serial.println("Saving...\n");
             }
             if (btn.getPin() == UP_BUTTON_PIN) {
-                Serial.println("Up\n");
                 menuItems[selectedMenuItem-1].values[selectModifyItem] += 10;
+
+                Serial.println("+10 Higher\n");
                 Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
                 Serial.println();
                 }
             if (btn.getPin() == DOWN_BUTTON_PIN) {
                 menuItems[selectedMenuItem-1].values[selectModifyItem] -= 10;
-                Serial.println("Down\n");
+
+                Serial.println("-10 Lower\n");
                 Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
                 Serial.println();
             }
@@ -126,37 +137,35 @@ void button_handler(Button2& btn) {
         // Fan Speed Menu
         else if (selectedMenuItem == 2) {
             if (btn.getPin() == RIGHT_BUTTON_PIN) {
-                Serial.println("Selected\n");
                 selectedMenuItem = 0;
                 selectModifyItem = 0;
+                Serial.println("Selected\n");
             }
             if (btn.getPin() == LEFT_BUTTON_PIN) {
-                Serial.println("Back\n");
                 selectedMenuItem = 0;
                 selectModifyItem = 0;
+                Serial.println("Back\n");
             }
             if (btn.getPin() == UP_BUTTON_PIN) {
-                Serial.println("Up\n");
-                if (menuItems[selectedMenuItem-1].values[selectModifyItem] >= 3) {
-                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 3;
+                if (menuItems[selectedMenuItem-1].values[selectModifyItem] >= MAX_NUM_FAN_SPEED) {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 0;
                 }
                 else {
                     menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
                 }
-                Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
-                Serial.println();
-                }
+                Serial.println("Up\n");
+            }
             if (btn.getPin() == DOWN_BUTTON_PIN) {
                 if (menuItems[selectedMenuItem-1].values[selectModifyItem] <= 0) {
-                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 0;
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] = MAX_NUM_FAN_SPEED;
                 }
                 else {
                     menuItems[selectedMenuItem-1].values[selectModifyItem] -= 1;
                 }
                 Serial.println("Down\n");
-                Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
-                Serial.println();
             }
+            Serial.println(menuItems[selectedMenuItem-1].values[selectModifyItem]);
+            Serial.println();
         }
         // Idle Time Menu
         else if (selectedMenuItem == 3) {
@@ -336,24 +345,74 @@ void start_display(void){
 
 // Display Item Menu
 void display_select_menu(int menu_num) {
-    // Display Upper Item if not empty.
-    if ((menu_num-1) >= 0) {
-        int centerX = (OLED_WIDTH - u8g2.getStrWidth(menuItems[menu_num-1].name )) / 2;
-        int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
-        u8g2.drawStr(centerX, centerY, menuItems[menu_num-1].name);
-    }
+
     // Display Center Item
+    u8g2.setFont(u8g2_font_t0_16_tr);
     int centerX = (OLED_WIDTH - u8g2.getStrWidth(menuItems[menu_num].name )) / 2;
-    int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
+    int centerY = 38;
     u8g2.drawStr(centerX, centerY, menuItems[menu_num].name);
     
+
+    // Display Upper Item if not empty.
+    if ((menu_num-1) >= 0) {
+        u8g2.setFont(u8g2_font_t0_12_tr);
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth(menuItems[menu_num-1].name )) / 2;
+    int centerY = 17;
+        u8g2.drawStr(centerX, centerY, menuItems[menu_num-1].name);
+    }
     // Display Down Item if not empty.
     if ((menu_num+1) < MENU_ITEMS_COUNT) {
+        u8g2.setFont(u8g2_font_t0_12_tr);
         int centerX = (OLED_WIDTH - u8g2.getStrWidth(menuItems[menu_num+1].name )) / 2;
-        int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
+        int centerY = 58;
         u8g2.drawStr(centerX, centerY, menuItems[menu_num+1].name);
     }
+
+    // Formating and Display
+    u8g2.drawLine(0, 21, 127, 21);
+    u8g2.drawLine(0, 42, 127, 42);
+    u8g2.drawLine(7, 0, 120, 0);
+    u8g2.drawLine(7, 63, 120, 63);
+    u8g2.drawLine(1, 57, 6, 62);
+    u8g2.drawLine(1, 6, 6, 1);
+    u8g2.drawLine(127, 7, 127, 56);
+    u8g2.drawLine(0, 7, 0, 56);
+    u8g2.drawLine(121, 62, 126, 57);
+    u8g2.drawLine(121, 1, 126, 6);
+    u8g2.drawFrame(2, 20, 124, 25);
+    u8g2.drawFrame(1, 22, 126, 22);
 }
+
+void display_C02_menu(int menu) {
+    // Set Font
+    u8g2.setFont(u8g2_font_t0_16_tr);
+    // String Buffer
+    char intStrBuffer[20];
+
+    // Lower Threshold
+    itoa(menuItems[menu].values[0], intStrBuffer, 10);
+    u8g2.drawStr(22, 51, intStrBuffer);
+    // Upper Threshold
+    itoa(menuItems[menu].values[1], intStrBuffer, 10);
+    u8g2.drawStr(76, 51, intStrBuffer);
+
+    // Display Items
+    u8g2.drawFrame(0, 0, 128, 17);
+    u8g2.setFont(u8g2_font_t0_16b_tr);
+    u8g2.drawStr(14, 14, "C02 Threshold");
+    u8g2.setFont(u8g2_font_t0_14_tr);
+    u8g2.drawStr(28, 32, "LOW");
+    u8g2.setFont(u8g2_font_4x6_tr);
+    u8g2.drawStr(76, 45, "");
+    u8g2.setFont(u8g2_font_t0_14_tr);
+    u8g2.drawStr(80, 32, "HIGH");
+    u8g2.drawFrame(1, 1, 126, 17);
+    u8g2.drawFrame(63, 38, 4, 4);
+    u8g2.drawFrame(64, 39, 2, 2);
+    u8g2.drawFrame(63, 47, 4, 4);
+    u8g2.drawFrame(64, 48, 2, 2);
+}
+
 
 /*** SETUP ***/
 void setup() {
@@ -392,7 +451,7 @@ void loop() {
     u8g2.clearBuffer();
 
     // Set font
-    u8g2.setFont(u8g2_font_ncenB08_tr);	// primary font
+    u8g2.setFont(u8g2_font_t0_16_tr);	// primary font
     //u8g.setFont(u8g_font_10x20);  // secondary font
     
     // Checks for Idle Flag.
@@ -406,28 +465,17 @@ void loop() {
         // Selecting Menu Options
         if (selectedMenuItem == 0){
             // TODO: Test display_select_menu(selectedMenuItem) function
-            int centerX = (OLED_WIDTH - u8g2.getStrWidth(menuItems[currentMenuItem].name )) / 2;
-            int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
-            u8g2.drawStr(centerX, centerY, menuItems[currentMenuItem].name);
+            display_select_menu(currentMenuItem);
         }
         // Selected CO2 Level Options
         if (selectedMenuItem == 1){
-            // TODO: Add Static Image format for CO2 Levels.
-            char intStrBuffer[20];
-            // Lower Level
-            itoa(menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
-            int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 4;
-            int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
-            u8g2.drawStr(centerX, centerY, intStrBuffer);
-            // Higher Level
-            itoa(menuItems[selectedMenuItem-1].values[1], intStrBuffer, 10);
-            int centerX2 = ((OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 4) + (OLED_WIDTH / 2);
-            u8g2.drawStr(centerX2, centerY, intStrBuffer);
+            // Set Selected Menu Item
+            display_C02_menu(selectedMenuItem-1);
         }
         // Selected Fan Speed Option
         if (selectedMenuItem == 2){
             // TODO: Add Static Image format for Fan Speed Options.
-            // TODO: Change the display to Off, Low, Medium 
+            // TODO: Change the display to Off, Low, High, Max
             char intStrBuffer[20];
             itoa(menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
             int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 2;

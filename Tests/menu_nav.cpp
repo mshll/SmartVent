@@ -477,8 +477,8 @@ void display_fan_speed(int menu){
     u8g2.drawStr(30, 14, "Fan Speed");
     u8g2.drawFrame(0, 0, 128, 17);
     u8g2.drawFrame(1, 1, 126, 17);
-    u8g2.drawLine(3, 47, 126, 47);
-    u8g2.drawLine(2, 32, 125, 32);
+    u8g2.drawFrame(11, 31, 106, 18);
+    u8g2.drawFrame(10, 32, 108, 16);
 }
 
 /*** SETUP ***/
@@ -540,13 +540,6 @@ void loop() {
         }
         // Selected Fan Speed Option
         if (selectedMenuItem == 2){
-            // TODO: Add Static Image format for Fan Speed Options.
-            // TODO: Change the display to Off, Low, High, Max
-            // char intStrBuffer[20];
-            // itoa(menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
-            // int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 2;
-            // int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
-            // u8g2.drawStr(centerX, centerY, intStrBuffer);
             display_fan_speed(selectedMenuItem);
         }
         // Selected Idle Time Option

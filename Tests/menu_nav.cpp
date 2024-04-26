@@ -147,20 +147,20 @@ void button_handler(Button2& btn) {
                 Serial.println("Back\n");
             }
             if (btn.getPin() == UP_BUTTON_PIN) {
-                if (menuItems[selectedMenuItem-1].values[selectModifyItem] >= MAX_NUM_FAN_SPEED) {
-                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 0;
-                }
-                else {
-                    menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
-                }
-                Serial.println("Up\n");
-            }
-            if (btn.getPin() == DOWN_BUTTON_PIN) {
                 if (menuItems[selectedMenuItem-1].values[selectModifyItem] <= 0) {
                     menuItems[selectedMenuItem-1].values[selectModifyItem] = MAX_NUM_FAN_SPEED;
                 }
                 else {
                     menuItems[selectedMenuItem-1].values[selectModifyItem] -= 1;
+                }
+                Serial.println("Up\n");
+            }
+            if (btn.getPin() == DOWN_BUTTON_PIN) {
+                if (menuItems[selectedMenuItem-1].values[selectModifyItem] >= MAX_NUM_FAN_SPEED) {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] = 0;
+                }
+                else {
+                    menuItems[selectedMenuItem-1].values[selectModifyItem] += 1;
                 }
                 Serial.println("Down\n");
             }
@@ -382,8 +382,8 @@ void display_select_menu(int menu_num) {
     u8g2.drawFrame(2, 20, 124, 25);
     u8g2.drawFrame(1, 22, 126, 22);
 }
-
-void display_C02_menu(int menu) {
+// Display Format for CO2 Menu
+void display_CO2_menu(int menu) {
     // Set Font
     u8g2.setFont(u8g2_font_t0_16_tr);
     // String Buffer
@@ -412,7 +412,74 @@ void display_C02_menu(int menu) {
     u8g2.drawFrame(63, 47, 4, 4);
     u8g2.drawFrame(64, 48, 2, 2);
 }
+// Display for Fan Speed Menu
+void display_fan_speed(int menu){
+    u8g2.setFont(u8g2_font_t0_16_tr);
+    
+    // Display Upper Item if not empty.
+    int centerY = 30;
+    if (menuItems[menu-1].values[0] - 1 == MAX_NUM_FAN_SPEED) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Maximum")) / 2;
+        u8g2.drawStr(centerX, centerY, "Maximum");
+    }
+    else if (menuItems[menu-1].values[0] - 1 == MAX_NUM_FAN_SPEED - 1) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Fast")) / 2;
+        u8g2.drawStr(centerX, centerY, "Fast");
+    }
+    else if (menuItems[menu-1].values[0] - 1 == MAX_NUM_FAN_SPEED - 2) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Slow")) / 2;
+        u8g2.drawStr(centerX, centerY, "Slow");
+    }
+    else if (menuItems[menu-1].values[0] - 1 == 0) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Off")) / 2;
+        u8g2.drawStr(centerX, centerY, "Off");
+    }
+    // Display Center Item being selected.
+    centerY = 45;
+    if (menuItems[menu-1].values[0] == MAX_NUM_FAN_SPEED) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Maximum")) / 2;
+        u8g2.drawStr(centerX, centerY, "Maximum");
+    }
+    else if (menuItems[menu-1].values[0] == MAX_NUM_FAN_SPEED - 1) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Fast")) / 2;
+        u8g2.drawStr(centerX, centerY, "Fast");
+    }
+    else if (menuItems[menu-1].values[0] == MAX_NUM_FAN_SPEED - 2) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Slow")) / 2;
+        u8g2.drawStr(centerX, centerY, "Slow");
+    }
+    else if (menuItems[menu-1].values[0] == 0) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Off")) / 2;
+        u8g2.drawStr(centerX, centerY, "Off");
+    }
+    
+    // Display Down Item if not empty.
+    centerY = 60;
+    if (menuItems[menu-1].values[0] + 1 == MAX_NUM_FAN_SPEED) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Maximum")) / 2;
+        u8g2.drawStr(centerX, centerY, "Maximum");
+    }
+    else if (menuItems[menu-1].values[0] + 1 == MAX_NUM_FAN_SPEED - 1) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Fast")) / 2;
+        u8g2.drawStr(centerX, centerY, "Fast");
+    }
+    else if (menuItems[menu-1].values[0] + 1 == MAX_NUM_FAN_SPEED - 2) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Slow")) / 2;
+        u8g2.drawStr(centerX, centerY, "Slow");
+    }
+    else if (menuItems[menu-1].values[0] + 1 == 0) {
+        int centerX = (OLED_WIDTH - u8g2.getStrWidth("Off")) / 2;
+        u8g2.drawStr(centerX, centerY, "Off");
+    }
 
+    // Display Formattings
+    u8g2.setFont(u8g2_font_t0_16b_tr);
+    u8g2.drawStr(30, 14, "Fan Speed");
+    u8g2.drawFrame(0, 0, 128, 17);
+    u8g2.drawFrame(1, 1, 126, 17);
+    u8g2.drawLine(3, 47, 126, 47);
+    u8g2.drawLine(2, 32, 125, 32);
+}
 
 /*** SETUP ***/
 void setup() {
@@ -457,7 +524,6 @@ void loop() {
     // Checks for Idle Flag.
     if (idle_flag == 1){
         // Display Idle Display.
-        // TODO: Change this to display data.
         Serial.println("Idling...\n");
         idle_display();
     }
@@ -470,17 +536,18 @@ void loop() {
         // Selected CO2 Level Options
         if (selectedMenuItem == 1){
             // Set Selected Menu Item
-            display_C02_menu(selectedMenuItem-1);
+            display_CO2_menu(selectedMenuItem-1);
         }
         // Selected Fan Speed Option
         if (selectedMenuItem == 2){
             // TODO: Add Static Image format for Fan Speed Options.
             // TODO: Change the display to Off, Low, High, Max
-            char intStrBuffer[20];
-            itoa(menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
-            int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 2;
-            int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
-            u8g2.drawStr(centerX, centerY, intStrBuffer);
+            // char intStrBuffer[20];
+            // itoa(menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
+            // int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 2;
+            // int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
+            // u8g2.drawStr(centerX, centerY, intStrBuffer);
+            display_fan_speed(selectedMenuItem);
         }
         // Selected Idle Time Option
         if (selectedMenuItem == 3){

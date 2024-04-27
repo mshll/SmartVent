@@ -63,8 +63,8 @@ void set_fan_speed(FanSpeed speed) {
   ledcWrite(1, speed);  // Control Fan 2
   current_fan_speed = speed;
 
-  Serial.print("Fan speed set to ");
-  Serial.print(speed);
+  // Serial.print("Fan speed set to ");
+  // Serial.println(speed);
 }
 
 FanSpeed get_fan_speed() {

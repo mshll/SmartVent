@@ -57,7 +57,7 @@ bool init_environment() {
     return false;
   }
 
-  Serial.println("Environment task started");
+  // Serial.println("Environment task started");
   return true;
 }
 
@@ -75,7 +75,7 @@ void environment_task(void *pvParameters) {
 
     update_fans(env.co2);
 
-    Serial.println("Environment task running\n");
+    // Serial.println("Environment task running\n");
     vTaskDelay(pdMS_TO_TICKS(TASK_DELAY));
   }
 

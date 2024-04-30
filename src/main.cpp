@@ -48,7 +48,7 @@ void loop() {
     u8g2.sendBuffer();
   }
 
-  check_host();
+  update_server();
   update_dashboard();
   // update_buttons();
   delay(500);

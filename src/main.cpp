@@ -14,19 +14,29 @@
 
 #include <Arduino.h>
 #include <DHTesp.h>
+#include <TickTwo.h>
 #include <U8g2lib.h>
-#include <Wire.h>
 #include "MQ135.h"
 #include "dashboard.h"
 #include "environment.h"
 #include "fans.h"
 #include "oled.h"
+#include "webserver.h"
 
 #define OLED_SCL 22
 #define OLED_SDA 23  // 21
 
+void send_heartbeat();
+void check_devices();
+
+uint heartbeat_interval = 5000;
+uint check_devices_interval = 16000;
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, OLED_SCL, OLED_SDA);
 Environment env;  // environment data [temperature, humidity, CO2] (saved from environment task)
+extern AsyncWebServer server;
+TickTwo heartbeat_ticker(send_heartbeat, heartbeat_interval);
+TickTwo check_devices_ticker(check_devices, check_devices_interval);
+WebServer webserver(&server, &heartbeat_ticker, &check_devices_ticker);
 
 void setup() {
   Serial.begin(9600);
@@ -34,8 +44,9 @@ void setup() {
   init_oled();
   display_splash_screen();
   init_environment();
-  init_dashboard();
   init_fans();
+  webserver.init();
+  init_dashboard();
   delay(2000);
 }
 
@@ -48,8 +59,18 @@ void loop() {
     u8g2.sendBuffer();
   }
 
-  update_server();
+  webserver.loop();
   update_dashboard();
   // update_buttons();
   delay(500);
+}
+
+// send_heartbeat function wrapper
+void send_heartbeat() {
+  webserver.send_heartbeat();
+}
+
+// check_devices function wrapper
+void check_devices() {
+  webserver.check_devices();
 }

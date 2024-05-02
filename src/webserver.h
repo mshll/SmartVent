@@ -32,6 +32,7 @@ class WebServer {
   void send_heartbeat();
   void check_devices();
   void reset_wifi();
+  const String serialize_devices();
 
  private:
   AsyncWebServer* _server;
@@ -57,6 +58,7 @@ class WebServer {
   void handle_incoming_packets();
   void update_device(String id, bool leader);
   void determine_leader();
+  int get_device_index(String id);
 };
 
 #endif

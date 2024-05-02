@@ -1,4 +1,10 @@
 /**
+ *    _____                      __     _    __           __
+ *   / ___/____ ___  ____ ______/ /_   | |  / /__  ____  / /_
+ *   \__ \/ __ `__ \/ __ `/ ___/ __/   | | / / _ \/ __ \/ __/
+ *  ___/ / / / / / / /_/ / /  / /_     | |/ /  __/ / / / /_
+ * /____/_/ /_/ /_/\__,_/_/   \__/     |___/\___/_/ /_/\__/
+ *
  * @file    main.cpp
  * @author  Team 8:
  *            Abdulaziz Alateeqi,
@@ -7,7 +13,6 @@
  *            Michael Fontaine,
  *            John Michael Mertz.
  * @brief   Smart Vent capstone project source code.
- *
  * @copyright Copyright (c) 2024
  *
  */
@@ -24,18 +29,18 @@
 #include "webserver.h"
 
 #define OLED_SCL 22
-#define OLED_SDA 23  // 21
+#define OLED_SDA 23
 
+/* helper functions prototypes */
 void send_heartbeat();
 void check_devices();
 
-uint heartbeat_interval = 5000;
-uint check_devices_interval = 16000;
+/* global variables */
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, OLED_SCL, OLED_SDA);
-Environment env;  // environment data [temperature, humidity, CO2] (saved from environment task)
-extern AsyncWebServer server;
-TickTwo heartbeat_ticker(send_heartbeat, heartbeat_interval);
-TickTwo check_devices_ticker(check_devices, check_devices_interval);
+Environment env;               // environment data [temperature, humidity, CO2] (saved from environment task)
+extern AsyncWebServer server;  // defined in dashboard.h
+TickTwo heartbeat_ticker(send_heartbeat, 5000 /*ms*/);
+TickTwo check_devices_ticker(check_devices, 16000 /*ms*/);
 WebServer webserver(&server, &heartbeat_ticker, &check_devices_ticker);
 
 void setup() {
@@ -51,7 +56,6 @@ void setup() {
 }
 
 void loop() {
-  // display_main_screen(env.temperature, env.humidity, env.co2);
   if (oled_enabled) {
     display_main_screen(env.temperature, env.humidity, env.co2);
   } else {
@@ -62,7 +66,6 @@ void loop() {
   webserver.loop();
   update_dashboard();
   // update_buttons();
-  delay(500);
 }
 
 // send_heartbeat function wrapper

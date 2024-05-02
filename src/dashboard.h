@@ -73,6 +73,7 @@ void dashboard_ticker_handler() {
   temperature.update(env.temperature);
   humidity.update(env.humidity);
   co2.update(env.co2);
+  dashboard.updateDevices(webserver.serialize_devices());
   dashboard.sendUpdates();
 }
 

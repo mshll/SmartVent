@@ -1,5 +1,5 @@
 /**
- * @file  webserver.c
+ * @file  webserver.cpp
  * @copyright Copyright (c) 2024
  */
 
@@ -41,17 +41,7 @@ void WebServer::init() {
   // add a rewrite which is only applicable in AP mode and STA mode, but not in Captive Portal mode
   _server->rewrite("/", "/dash").setFilter([](AsyncWebServerRequest* request) { return ESPConnect.getState() != ESPConnectState::PORTAL_STARTED; });
 
-  _server->on("/device/", HTTP_ANY, [&](AsyncWebServerRequest* request) {
-    // Check if there's a device ID in the URL
-    if (request->hasArg("id")) {
-      String deviceId = request->arg("id");
-      String htmlContent =
-          "<html><body><iframe src='http://smartvent-" + deviceId + ".local' style='width:100%; height:100%; border:none;'></iframe></body></html>";
-      request->send(200, "text/html", htmlContent);
-    } else {
-      request->send(404, "text/plain", "Device ID missing");
-    }
-  });
+  if (get_device_index(device_id) == -1) devices.push_back({device_id, WiFi.localIP(), millis()});
 
   // network state listener for async mode
   ESPConnect.listen([&](ESPConnectState previous, ESPConnectState state) {
@@ -64,16 +54,14 @@ void WebServer::init() {
 
     switch (state) {
       case ESPConnectState::NETWORK_CONNECTED:
-        udp.beginMulticast(multicast_ip, udp_port);
       case ESPConnectState::AP_STARTED:
         //*************************************************************
+        udp.beginMulticast(multicast_ip, udp_port);
         is_connected = true;
 
-        Serial.println("====> Network connected!!!!!!!!!!!!!!!!!!!!!!!!");
+        Serial.println("==========> NETWORK CONNECTED");
         send_election_message();
-        // delay(500);
         determine_leader();
-        // delay(500);
         setup_mdns();
 
         heartbeat_ticker->start();
@@ -82,7 +70,6 @@ void WebServer::init() {
         _server->begin();
         break;
         //*************************************************************
-
       case ESPConnectState::NETWORK_DISCONNECTED:
         _server->end();
       default:
@@ -121,30 +108,32 @@ void WebServer::loop() {
  * @brief Sets up mDNS responder using the appropriate hostname depending on the device's role.
  */
 void WebServer::setup_mdns() {
-  String hostname_str = is_leader ? HOSTNAME : hostname;
+  String hostname_str = is_leader ? HOSTNAME : hostname;  // If the device is the leader, use the default hostname
 
+  delay(500);
   if (MDNS.begin(hostname_str.c_str())) {
     MDNS.addService("http", "tcp", 80);
     Serial.println("mDNS responder started on " + hostname_str);
-
   } else {
     Serial.println("Error setting up MDNS responder!");
   }
 }
 
 /**
- * @brief Sends a heartbeat message to all devices in the network.
+ * @brief Sends a heartbeat message to all devices in the network to indicate that the device is still active.
  */
 void WebServer::send_heartbeat() {
+  int device_index = get_device_index(device_id);
   String message = "HB:" + device_id + ":" + (is_leader ? "1" : "0");
-  Serial.println("---> Sending heartbeat: " + message);
+  Serial.println("---> Sending heartbeat message: " + message);
   udp.beginMulticastPacket();
   udp.write((const uint8_t*)message.c_str(), message.length());
   udp.endPacket();
+  devices.at(device_index).last_heartbeat = millis();
 }
 
 /**
- * @brief Sends an election message to all devices in the network.
+ * @brief Sends an election message to all devices in the network to initiate an election for the leader.
  */
 void WebServer::send_election_message() {
   String message = "ELECT:" + device_id;
@@ -183,13 +172,13 @@ void WebServer::handle_incoming_packets() {
         send_election_message();
       }
       update_device(sender_id, false);
-      determine_leader();
+      // determine_leader();
     }
   }
 }
 
 /**
- * @brief Updates the device's last heartbeat and determines the leader.
+ * @brief Updates the device's information in the devices vector.
  * @param id The device's ID.
  * @param leader Whether the device is the leader or not.
  */
@@ -222,24 +211,26 @@ void WebServer::update_device(String id, bool leader) {
 void WebServer::check_devices() {
   Serial.println("Checking devices...");
   uint32_t current_time = millis();
-  bool leader_missing = false;
+  bool leader_inactive = false;
 
   for (int i = devices.size() - 1; i >= 0; i--) {
+    if (devices[i].id == device_id) continue;  // Skip own device
+
     if (current_time - devices[i].last_heartbeat > heartbeat_timeout) {
       Serial.println("Device " + devices[i].id + " is inactive.");
       if (devices[i].id == leader_id) {
-        leader_missing = true;
+        leader_inactive = true;
       }
       devices.erase(devices.begin() + i);  // Remove inactive device
     }
   }
 
-  // If the leader is missing, initiate leader election
-  if (leader_missing) {
+  // If the leader went inactive, initiate an election
+  if (leader_inactive) {
     send_election_message();
     determine_leader();
   }
-  Serial.println("Devices count: " + String(devices.size() + 1));
+  Serial.println("Devices count: " + String(devices.size()));
 }
 
 /**
@@ -247,31 +238,18 @@ void WebServer::check_devices() {
  */
 void WebServer::determine_leader() {
   bool was_leader = is_leader;
-  is_leader = true;
-  for (const auto& device : devices) {
-    if (device.id > device_id) {
-      is_leader = false;
-      leader_id = device.id;
-      break;
-    }
-  }
 
-  if (is_leader) {
-    leader_id = device_id;
-    Serial.println("This device is now the leader.");
+  // Sort devices by ID
+  std::sort(devices.begin(), devices.end(), [](const DeviceInfo& a, const DeviceInfo& b) { return a.id < b.id; });
 
-    if (!was_leader) {
-      // delay(500);
-      setup_mdns();
-    }
-  } else {
-    Serial.println("Leader is: " + leader_id);
-    if (was_leader) {
-      MDNS.end();
-      // delay(500);
-      setup_mdns();
-    }
+  // Make the device with the smallest ID the leader
+  leader_id = devices.front().id;
+  is_leader = (device_id == leader_id);
+
+  if (was_leader != is_leader) {  // Leader status changed
+    MDNS.end();
   }
+  setup_mdns();
 }
 
 /**
@@ -280,6 +258,48 @@ void WebServer::determine_leader() {
 void WebServer::reset_wifi() {
   ESPConnect.clearConfiguration();
   ESPConnect.end();
-  // delay(100);
+  MDNS.end();
+  udp.stop();
+  _server->end();
+  delay(500);
   ESPConnect.begin(_server, HOSTNAME, AP_SSID, AP_PASS);
+}
+
+/**
+ * @brief Gets the index of a device in the devices vector.
+ * @param id The device's ID.
+ * @return The index of the device in the devices vector.
+ */
+int WebServer::get_device_index(String id) {
+  for (int i = 0; i < devices.size(); i++) {
+    if (devices[i].id == id) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/**
+ * @brief Serializes the devices vector to a JSON string.
+ * @return The JSON string representing the devices vector.
+ */
+const String WebServer::serialize_devices() {
+  String json = "\"devices\": [";
+  for (int i = 0; i < devices.size(); i++) {
+    bool leader = devices[i].id == leader_id;
+    json += "{";
+    json += "\"id\": \"" + devices[i].id + "\",";
+    json += "\"name\": \"Smart Vent" + (devices.size() > 1 ? (" " + String(i + 1)) : "") + "\",";
+    json += "\"url\": \"http://" + String(HOSTNAME) + (leader ? "" : "-" + devices[i].id) + ".local\",";
+    json += "\"is_leader\": " + String(leader) + ",";
+    json += "\"this_device\": " + String(devices[i].id == device_id);
+    // json += "\"last_heartbeat\": " + String(devices[i].last_heartbeat);
+    json += "}";
+    if (i < devices.size() - 1) {
+      json += ",";
+    }
+  }
+  json += "]";
+  // Serial.println("Devices JSON: \n" + json);
+  return json;
 }

@@ -13,6 +13,7 @@
 
 #include <Arduino.h>
 #include <MQ135.h>
+#include <MycilaESPConnect.h>
 #include <U8g2lib.h>
 
 extern U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2;
@@ -20,6 +21,8 @@ extern U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2;
 /* function declarations */
 void init_oled();
 void display_main_screen(float temp, float hum, float co2);
+void display_splash_screen();
+void split_float(float f, String &int_part, String &dec_part);
 
 /**
  * @brief Initialize OLED display
@@ -52,55 +55,108 @@ void display_main_screen(float temp, float hum, float co2) {
   static const unsigned char image_Layer_24_bits[] U8X8_PROGMEM = {0x02, 0x05, 0x02};
   static const unsigned char image_Layer_25_bits[] U8X8_PROGMEM = {0x02, 0x05, 0x02};
 
-  int temp_int = (int)temp;
-  int temp_dec = (int)(temp * 100) % 100;
-  int hum_int = (int)hum;
-  int hum_dec = (int)(hum * 100) % 100;
+  String temp_int, temp_dec, hum_int, hum_dec;
+  split_float(temp, temp_int, temp_dec);
+  split_float(hum, hum_int, hum_dec);
 
-  u8g2.setBitmapMode(1);
+  //********************
+  static const unsigned char image_wifi_on_bits[] U8X8_PROGMEM = {0xfe, 0x00, 0x01, 0x01, 0x7c, 0x00, 0x82, 0x00, 0x38, 0x00, 0x00, 0x00, 0x10, 0x00};
+  static const unsigned char image_wifi_off_bits[] U8X8_PROGMEM = {0xd6, 0x00, 0x11, 0x01, 0x54, 0x00, 0x92,
+                                                                   0x00, 0x10, 0x00, 0x00, 0x00, 0x10, 0x00};
+  static const unsigned char image_temperature_bits[] U8X8_PROGMEM = {0x70, 0x00, 0x88, 0x00, 0xa8, 0x00, 0xa8, 0x00, 0xa8, 0x00, 0xa8,
+                                                                      0x00, 0xa8, 0x00, 0xa8, 0x00, 0xa8, 0x00, 0x24, 0x01, 0x72, 0x02,
+                                                                      0xea, 0x02, 0xfa, 0x02, 0x72, 0x02, 0x04, 0x01, 0xf8, 0x00};
+  static const unsigned char image_weather_humidity_bits[] U8X8_PROGMEM = {0x20, 0x00, 0x20, 0x00, 0x30, 0x00, 0x70, 0x00, 0x78, 0x00, 0xf8,
+                                                                           0x00, 0xfc, 0x01, 0xfc, 0x01, 0x7e, 0x03, 0xfe, 0x02, 0xff, 0x06,
+                                                                           0xff, 0x07, 0xfe, 0x03, 0xfe, 0x03, 0xfc, 0x01, 0xf0, 0x00};
+  static const unsigned char image_percent_bits[] U8X8_PROGMEM = {0xc2, 0x00, 0x65, 0x00, 0x32, 0x00, 0x98, 0x00, 0x4c, 0x01, 0x86, 0x00};
+  static const unsigned char image_paint_0_bits[] U8X8_PROGMEM = {0x3c, 0x1c, 0x00, 0x66, 0x36, 0x00, 0x43, 0x63, 0x00, 0x03, 0x63, 0x02,
+                                                                  0x03, 0x63, 0x05, 0x43, 0x63, 0x04, 0x66, 0x36, 0x02, 0x3c, 0x1c, 0x07};
+  static const unsigned char image_Pin_star_bits[] U8X8_PROGMEM = {0x49, 0x2a, 0x1c, 0x7f, 0x1c, 0x2a, 0x49};
+
   u8g2.setFontMode(1);
-  u8g2.drawXBMP(8, 13, 16, 16, image_Temperature_16x16_bits);
-  u8g2.setFont(u8g2_font_profont22_tr);
-  u8g2.drawStr(21, 28, String(temp_int).c_str());
-  u8g2.setFont(u8g2_font_5x7_tf);
-  u8g2.drawStr(44, 28, ("." + String(temp_dec)).c_str());
-  u8g2.setFont(u8g2_font_6x10_tr);
-  u8g2.drawStr(53, 20, "C");
-  u8g2.setFont(u8g2_font_profont22_tr);
-  u8g2.drawStr(80, 28, String(hum_int).c_str());
-  u8g2.setFont(u8g2_font_5x7_tf);
-  u8g2.drawStr(103, 28, ("." + String(hum_dec)).c_str());
-  u8g2.setFont(u8g2_font_6x10_tr);
-  u8g2.drawStr(123, 7, "%");
-  u8g2.setFont(u8g2_font_profont22_tr);
-  u8g2.drawStr(35, 51, String(co2, 1).c_str());
-  u8g2.setFont(u8g2_font_helvB08_tr);
-  u8g2.drawStr(13, 44, "CO");
-  u8g2.drawXBMP(72, 21, 1, 2, image_Layer_11_bits);
-  u8g2.drawXBMP(70, 15, 7, 11, image_Layer_12_bits);
-  u8g2.setFont(u8g2_font_4x6_tr);
-  u8g2.drawStr(29, 45, "2");
-  u8g2.drawFrame(9, 9, 112, 46);
-  u8g2.drawLine(10, 32, 119, 32);
-  u8g2.drawLine(9, 31, 119, 31);
-  u8g2.drawLine(9, 8, 120, 8);
-  u8g2.drawLine(121, 54, 121, 9);
-  u8g2.drawLine(9, 55, 120, 55);
-  u8g2.drawLine(8, 9, 8, 54);
-  u8g2.setFont(u8g2_font_5x8_tr);
-  u8g2.drawStr(15, 51, "ppm");
-  u8g2.drawLine(0, 0, 0, 0);
-  u8g2.drawLine(116, 13, 107, 19);
-  u8g2.drawXBMP(107, 13, 3, 3, image_Layer_24_bits);
-  u8g2.drawXBMP(114, 17, 3, 3, image_Layer_24_bits);
-  u8g2.drawXBMP(48, 13, 3, 3, image_Layer_25_bits);
+  u8g2.setBitmapMode(1);
+  u8g2.drawXBM(114, 0, 9, 7, ESPConnect.getState() == ESPConnectState::NETWORK_CONNECTED ? image_wifi_on_bits : image_wifi_off_bits);
+  u8g2.drawXBM(9, 17, 11, 16, image_temperature_bits);
+  u8g2.drawXBM(68, 17, 11, 16, image_weather_humidity_bits);
+  u8g2.setFont(u8g2_font_profont22_mf);
+  u8g2.drawStr(22, 32, temp_int.c_str());
+  u8g2.setFont(u8g2_font_profont10_mf);
+  u8g2.drawStr(44, 32, temp_dec.c_str());
+  u8g2.drawEllipse(50, 19, 1, 1);
+  u8g2.drawStr(54, 24, "C");
+  u8g2.setFont(u8g2_font_profont22_mf);
+  u8g2.drawStr(82, 32, hum_int.c_str());
+  u8g2.setFont(u8g2_font_profont10_mf);
+  u8g2.drawStr(104, 32, hum_dec.c_str());
+  u8g2.setFont(u8g2_font_profont29_mf);
+  u8g2.drawStr(35, 59, String(co2, 0).c_str());
+  u8g2.drawXBM(109, 18, 9, 6, image_percent_bits);
+  u8g2.setFont(u8g2_font_6x10_mf);
+  u8g2.drawStr(14, 57, "ppm");
+  u8g2.drawLine(5, 13, 5, 63);
+  u8g2.drawXBM(13, 40, 19, 8, image_paint_0_bits);
+  u8g2.drawLine(122, 13, 122, 63);
+  u8g2.drawLine(121, 13, 6, 13);
+  u8g2.drawLine(121, 63, 6, 63);
+  u8g2.drawLine(121, 36, 6, 36);
+  u8g2.drawLine(121, 35, 6, 35);
+  u8g2.drawLine(121, 62, 6, 62);
+  u8g2.drawLine(4, 63, 4, 13);
+  u8g2.drawLine(123, 63, 123, 13);
+  u8g2.drawLine(123, 12, 4, 12);
+  u8g2.drawXBM(4, 0, 7, 7, image_Pin_star_bits);
+  u8g2.setFont(u8g2_font_4x6_mf);
+  u8g2.drawStr(15, 6, get_fan_speed_str());
+
+  //********************
 
   u8g2.setFont(u8g2_font_04b_03_tr);
   float rzero = mq135_sensor.getRZero();
   float corrected_rzero = mq135_sensor.getCorrectedRZero(temp, hum);
-  u8g2.drawStr(10, 5, ("r0: " + String(rzero, 2) + "   r0c: " + String(corrected_rzero, 2)).c_str());
+  // u8g2.drawStr(10, 5, ("r0: " + String(rzero, 2) + "   r0c: " + String(corrected_rzero, 2)).c_str());
+  // u8g2.drawStr(50, 9, ("r0c: " + String(corrected_rzero, 2)).c_str());
 
   u8g2.sendBuffer();
+}
+
+void display_splash_screen() {
+  u8g2.clearBuffer();
+  u8g2.setFontMode(1);
+  u8g2.setBitmapMode(1);
+  u8g2.setFont(u8g2_font_timR18_tf);
+  u8g2.drawStr(12, 46, "SmartVent");
+  u8g2.setFont(u8g2_font_helvB08_tf);
+  u8g2.drawStr(36, 22, "LaunchPilot");
+  u8g2.sendBuffer();
+}
+
+/**
+ * @brief Split float into integer and decimal parts
+ *
+ * @param f float number
+ * @param int_part integer part
+ * @param dec_part decimal part
+ */
+void split_float(float number, String &intPart, String &decPart) {
+  // Convert float to string with 2 decimal places
+  char floatStr[10];
+  dtostrf(number, 0, 2, floatStr);
+
+  // Convert char array to String object for easier manipulation
+  String floatString = String(floatStr);
+
+  // Find position of decimal point
+  int dotIndex = floatString.indexOf('.');
+
+  // Extract integer part and decimal part based on position of decimal point
+  intPart = floatString.substring(0, dotIndex);
+  decPart = floatString.substring(dotIndex);
+
+  // Add leading zero to decimal part if necessary (to ensure 2 decimal places)
+  if (decPart.length() == 1) {
+    decPart += "0";
+  }
 }
 
 #endif

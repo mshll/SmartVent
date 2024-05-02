@@ -51,7 +51,7 @@ TempAndHumidity get_climate() {
   float dewPoint = dht.computeDewPoint(climate.temperature, climate.humidity);
   // float cr = dht.getComfortRatio(cf, climate.temperature, climate.humidity);
 
-  Serial.println(" T:" + String(climate.temperature) + " H:" + String(climate.humidity) + " I:" + String(heatIndex) + " D:" + String(dewPoint));
+  // Serial.println(" T:" + String(climate.temperature) + " H:" + String(climate.humidity) + " I:" + String(heatIndex) + " D:" + String(dewPoint));
 
   return climate;
 }

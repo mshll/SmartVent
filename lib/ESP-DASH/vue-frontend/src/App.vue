@@ -7,7 +7,7 @@
   </div>
   <div class="section pt-2">
     <transition name="fade" mode="out-in">
-      <router-view :cards="cards" :charts="charts" :stats="stats" />
+      <router-view :cards="cards" :charts="charts" :stats="stats" :devices="devices" />
     </transition>
   </div>
 </div>
@@ -43,7 +43,8 @@ export default {
         wifiSignal: null
       },
       cards: [],
-      charts: []
+      charts: [],
+      devices: []
     }
   },
 
@@ -91,6 +92,15 @@ export default {
             y_axis: chart.y_axis,
           });
         });
+        json.devices.forEach(device => {
+          this.devices.push({
+            id: device.id,
+            name: device.name,
+            url: device.url,
+            is_leader: device.is_leader,
+            this_device: device.this_device
+          });
+        });
       } else if (json.command === "updateStats") {
         this.stats.enabled = json.statistics.enabled;
         if (this.stats.enabled) {
@@ -113,6 +123,17 @@ export default {
               existingchart.y_axis_label = chart.y_axis_label;
             }
           }
+        });
+      } else if (json.command === "updateDevices") {
+        this.devices = [];
+        json.devices.forEach(device => {
+          this.devices.push({
+            id: device.id,
+            name: device.name,
+            url: device.url,
+            is_leader: device.is_leader,
+            this_device: device.this_device
+          });
         });
       } else if (json.command === "refreshLayout") {
         Socket.send(JSON.stringify({

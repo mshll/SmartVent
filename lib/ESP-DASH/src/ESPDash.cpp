@@ -258,7 +258,7 @@ String ESPDash::generateLayoutJSON(bool only_stats) {
   if(chartsData.length() > 0)
     chartsData.remove(chartsData.length()-1);
 
-  return "{\"command\":\"updateLayout\", \"version\":\"1\", \"statistics\":{" + stats + "}, \"cards\":[" + cardsData + "], \"charts\":[" + chartsData + "]}";
+  return "{\"command\":\"updateLayout\", \"version\":\"1\", \"statistics\":{" + stats + "}, \"cards\":[" + cardsData + "], \"charts\":[" + chartsData + "], " + devices + "}";
 }
 
 
@@ -365,4 +365,11 @@ void ESPDash::refreshLayout() {
 ESPDash::~ESPDash(){
   _server->removeHandler(_ws);
   delete _ws;
+}
+
+
+void ESPDash::updateDevices(String devices_json) {
+  devices = devices_json;
+  const String json = "{\"command\":\"updateDevices\"," + devices + "}";
+  _ws->textAll(json);
 }

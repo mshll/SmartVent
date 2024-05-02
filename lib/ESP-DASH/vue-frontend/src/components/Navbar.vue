@@ -4,7 +4,7 @@
     <nav class="navbar" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
         <router-link class="navbar-item" to="/" style="flex-grow: 1; background-color: transparent;">
-          <h1 class="title is-4">Smart Vent</h1>
+          <h1 class="title is-size-4 has-text-weight-bold has-text-black">Smart Vent</h1>
         </router-link>
 
         <a role="button" class="navbar-burger burger" aria-label="menu" :aria-expanded="open" :class="{'is-active': open}" @click.prevent="open = !open">
@@ -17,11 +17,14 @@
       <div class="navbar-menu" :class="{ 'is-active': open }">
         <div class="navbar-end">
           <router-link class="navbar-item" @click.native="open = false" to="/" exact>
-            Overview
+            Dashboard
           </router-link>
-          <router-link class="navbar-item" @click.native="open = false" to="/statistics">
+          <router-link class="navbar-item" @click.native="open = false" to="/hub">
+            Devices Hub
+          </router-link>
+          <!-- <router-link class="navbar-item" @click.native="open = false" to="/statistics">
             Statistics
-          </router-link>
+          </router-link> -->
         </div>
       </div>
     </nav>

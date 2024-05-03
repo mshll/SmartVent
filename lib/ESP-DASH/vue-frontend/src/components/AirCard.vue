@@ -12,7 +12,7 @@
             </div>
           </div>
           <div class="column">
-            <h6 class="is-size-6 has-text-black has-text-weight-semibold" v-html="card.name ? card.name : 'CO<sub>2</sub>'"></h6>
+            <h6 class="is-size-6 has-text-black has-text-weight-semibold" v-html="card.name.replace('CO2', 'CO<sub>2</sub>') "></h6>
             <h2 class="is-size-3 has-text-black has-text-weight-bold">{{ card.value }} <small class="is-size-5 has-text-weight-normal has-text-grey">{{ card.symbol }}</small></h2>
           </div>
         </div>

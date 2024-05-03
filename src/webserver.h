@@ -42,7 +42,6 @@ class WebServer {
 
  private:
   AsyncWebServer* _server;
-  bool oled_enabled;
   bool is_connected;
   WiFiUDP udp;
   uint udp_port;

@@ -3,28 +3,20 @@
 // Integral type to string pairs events
 // ID, type
 struct CardNames cardTags[] = {
-  {GENERIC_CARD, "generic"},
-  {AIR_CARD, "air"},
-  {TEMPERATURE_CARD, "temperature"},
-  {HUMIDITY_CARD, "humidity"},
-  {STATUS_CARD, "status"},
-  {SLIDER_CARD, "slider"},
-  {BUTTON_CARD, "button"},
-  {PUSH_BUTTON_CARD, "push_button"},
-  {PROGRESS_CARD, "progress"},
+    {GENERIC_CARD, "generic"}, {AIR_CARD, "air"},       {TEMPERATURE_CARD, "temperature"}, {HUMIDITY_CARD, "humidity"}, {STATUS_CARD, "status"},
+    {SLIDER_CARD, "slider"},   {BUTTON_CARD, "button"}, {PUSH_BUTTON_CARD, "push_button"}, {PROGRESS_CARD, "progress"},
 };
 
 // Integral type to string pairs events
 // ID, type
 struct ChartNames chartTags[] = {
-  {BAR_CHART, "bar"},
+    {BAR_CHART, "bar"},
 };
-
 
 /*
   Constructor
 */
-ESPDash::ESPDash(AsyncWebServer* server, bool enable_stats, String path) {
+ESPDash::ESPDash(AsyncWebServer *server, bool enable_stats, String path) {
   _server = server;
   stats_enabled = enable_stats;
 
@@ -32,28 +24,27 @@ ESPDash::ESPDash(AsyncWebServer* server, bool enable_stats, String path) {
   _ws = new AsyncWebSocket("/dashws");
 
   // Attach AsyncWebServer Routes
-  _server->on(path.c_str(), HTTP_GET, [this](AsyncWebServerRequest *request){
-    if(basic_auth){
-      if(!request->authenticate(username, password))
-      return request->requestAuthentication();
+  _server->on(path.c_str(), HTTP_GET, [this](AsyncWebServerRequest *request) {
+    if (basic_auth) {
+      if (!request->authenticate(username, password)) return request->requestAuthentication();
     }
     // respond with the compressed frontend
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", DASH_HTML, DASH_HTML_SIZE);
-    response->addHeader("Content-Encoding","gzip");
-    request->send(response);        
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
   });
 
   // Websocket Callback Handler
-  _ws->onEvent([&](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len){
+  _ws->onEvent([&](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
     StaticJsonDocument<200> json;
     String response;
 
     if (type == WS_EVT_DATA) {
-      AwsFrameInfo * info = (AwsFrameInfo * ) arg;
-      if (info -> final && info -> index == 0 && info -> len == len) {
-        if (info -> opcode == WS_TEXT) {
+      AwsFrameInfo *info = (AwsFrameInfo *)arg;
+      if (info->final && info->index == 0 && info->len == len) {
+        if (info->opcode == WS_TEXT) {
           data[len] = 0;
-          deserializeJson(json, reinterpret_cast<const char*>(data));
+          deserializeJson(json, reinterpret_cast<const char *>(data));
           // client side commands parsing
           if (json["command"] == "getLayout")
             response = generateLayoutJSON();
@@ -64,10 +55,10 @@ ESPDash::ESPDash(AsyncWebServer* server, bool enable_stats, String path) {
           else if (json["command"] == "buttonClicked") {
             // execute and reference card data struct to funtion
             uint32_t id = json["id"].as<uint32_t>();
-            for(int i=0; i < cards.Size(); i++){
+            for (int i = 0; i < cards.size(); i++) {
               Card *p = cards[i];
-              if(id == p->_id){
-                if(p->_callback != nullptr){
+              if (id == p->_id) {
+                if (p->_callback != nullptr) {
                   p->_callback(json["value"].as<bool>());
                 }
               }
@@ -76,10 +67,10 @@ ESPDash::ESPDash(AsyncWebServer* server, bool enable_stats, String path) {
           } else if (json["command"] == "pushButtonClicked") {
             // execute and reference card data struct to funtion
             uint32_t id = json["id"].as<uint32_t>();
-            for(int i=0; i < cards.Size(); i++){
+            for (int i = 0; i < cards.size(); i++) {
               Card *p = cards[i];
-              if(id == p->_id){
-                if(p->_callback != nullptr){
+              if (id == p->_id) {
+                if (p->_callback != nullptr) {
                   p->_callback(json["value"].as<bool>());
                 }
               }
@@ -88,10 +79,10 @@ ESPDash::ESPDash(AsyncWebServer* server, bool enable_stats, String path) {
           } else if (json["command"] == "sliderChanged") {
             // execute and reference card data struct to funtion
             uint32_t id = json["id"].as<uint32_t>();
-            for(int i=0; i < cards.Size(); i++){
+            for (int i = 0; i < cards.size(); i++) {
               Card *p = cards[i];
-              if(id == p->_id){
-                if(p->_callback != nullptr){
+              if (id == p->_id) {
+                if (p->_callback != nullptr) {
                   p->_callback(json["value"].as<int>());
                 }
               }
@@ -110,7 +101,6 @@ ESPDash::ESPDash(AsyncWebServer* server, bool enable_stats, String path) {
   _server->addHandler(_ws);
 }
 
-
 void ESPDash::setAuthentication(const char *user, const char *pass) {
   username = user;
   password = pass;
@@ -118,44 +108,41 @@ void ESPDash::setAuthentication(const char *user, const char *pass) {
   _ws->setAuthentication(user, pass);
 }
 
-
 // Add Card
 void ESPDash::add(Card *card) {
-  cards.PushBack(card);
+  cards.push_back(card);
   refreshLayout();
 }
 
 // Remove Card
 void ESPDash::remove(Card *card) {
-  for(int i=0; i < cards.Size(); i++){
+  for (int i = 0; i < cards.size(); i++) {
     Card *p = cards[i];
-    if(p->_id == card->_id){
-      cards.Erase(i);
+    if (p->_id == card->_id) {
+      cards.erase(cards.begin() + i);
       refreshLayout();
       return;
     }
   }
 }
 
-
 // Add Chart
 void ESPDash::add(Chart *chart) {
-  charts.PushBack(chart);
+  charts.push_back(chart);
   refreshLayout();
 }
 
 // Remove Card
 void ESPDash::remove(Chart *chart) {
-  for(int i=0; i < charts.Size(); i++){
+  for (int i = 0; i < charts.size(); i++) {
     Chart *p = charts[i];
-    if(p->_id == chart->_id){
-      charts.Erase(i);
+    if (p->_id == chart->_id) {
+      charts.erase(charts.begin() + i);
       refreshLayout();
       return;
     }
   }
 }
-
 
 // push updates to all connected clients
 String ESPDash::generateUpdatesJSON(bool toAll) {
@@ -163,24 +150,22 @@ String ESPDash::generateUpdatesJSON(bool toAll) {
   String chartsData;
 
   // Generate JSON for all changed Cards
-  for (int i=0; i < cards.Size(); i++) {
+  for (int i = 0; i < cards.size(); i++) {
     Card *p = cards[i];
-    if(p->_changed || toAll){
+    if (p->_changed || toAll) {
       p->_changed = false;
       cardsData += generateComponentJSON(p, true);
       cardsData += ",";
-    }    
+    }
   }
 
   // Remove Last Comma
-  if(cardsData.length() > 0)
-    cardsData.remove(cardsData.length()-1);
+  if (cardsData.length() > 0) cardsData.remove(cardsData.length() - 1);
 
-  
   // Generate JSON for all changed Charts
-  for (int i=0; i < charts.Size(); i++) {
+  for (int i = 0; i < charts.size(); i++) {
     Chart *p = charts[i];
-    if(p->_changed || toAll){
+    if (p->_changed || toAll) {
       p->_changed = false;
       chartsData += generateComponentJSON(p, true);
       chartsData += ",";
@@ -188,12 +173,10 @@ String ESPDash::generateUpdatesJSON(bool toAll) {
   }
 
   // Remove Last Comma
-  if(chartsData.length() > 0)
-    chartsData.remove(chartsData.length()-1);
+  if (chartsData.length() > 0) chartsData.remove(chartsData.length() - 1);
 
   return "{\"command\":\"updateCards\", \"cards\":[" + cardsData + "], \"charts\":[" + chartsData + "]}";
 }
-
 
 // generates the layout JSON string to the frontend
 String ESPDash::generateLayoutJSON(bool only_stats) {
@@ -204,7 +187,8 @@ String ESPDash::generateLayoutJSON(bool only_stats) {
   // only status has been requested
   if (only_stats) {
     return "{\"command\":\"updateStats\", "
-    "\"statistics\":{" + stats + "}}";
+           "\"statistics\":{" +
+           stats + "}}";
   }
 
   /*
@@ -212,44 +196,42 @@ String ESPDash::generateLayoutJSON(bool only_stats) {
   */
 
   // Generate JSON for all Cards
-  for (int i=0; i < cards.Size(); i++) {
+  for (int i = 0; i < cards.size(); i++) {
     Card *p = cards[i];
     cardsData += generateComponentJSON(p);
     cardsData += ",";
   }
 
   // Remove Last Comma
-  if(cardsData.length() > 0)
-    cardsData.remove(cardsData.length()-1);
+  if (cardsData.length() > 0) cardsData.remove(cardsData.length() - 1);
 
-  /* 
+  /*
     Generate Charts JSON
   */
-  
+
   // Generate JSON for all Charts
-  for (int i=0; i < charts.Size(); i++) {
+  for (int i = 0; i < charts.size(); i++) {
     Chart *p = charts[i];
     chartsData += generateComponentJSON(p);
     chartsData += ",";
   }
 
   // Remove Last Comma
-  if(chartsData.length() > 0)
-    chartsData.remove(chartsData.length()-1);
+  if (chartsData.length() > 0) chartsData.remove(chartsData.length() - 1);
 
-  return "{\"command\":\"updateLayout\", \"version\":\"1\", \"statistics\":{" + stats + "}, \"cards\":[" + cardsData + "], \"charts\":[" + chartsData + "], " + devices + "}";
+  return "{\"command\":\"updateLayout\", \"version\":\"1\", \"statistics\":{" + stats + "}, \"cards\":[" + cardsData + "], \"charts\":[" +
+         chartsData + "], " + devices + "}";
 }
-
 
 /*
   Generate Card JSON
 */
-const String ESPDash::generateComponentJSON(Card* card, bool change_only){
+const String ESPDash::generateComponentJSON(Card *card, bool change_only) {
   String data = "";
 
   StaticJsonDocument<256> doc;
   doc["id"] = card->_id;
-  if(!change_only){
+  if (!change_only) {
     doc["name"] = card->_name;
     doc["type"] = cardTags[card->_type].type;
     doc["value_min"] = card->_value_min;
@@ -276,16 +258,15 @@ const String ESPDash::generateComponentJSON(Card* card, bool change_only){
   return data;
 }
 
-
 /*
   Generate Chart JSON
 */
-const String ESPDash::generateComponentJSON(Chart* chart, bool change_only){
+const String ESPDash::generateComponentJSON(Chart *chart, bool change_only) {
   String data = "";
 
   DynamicJsonDocument doc(2048);
   doc["id"] = chart->_id;
-  if(!change_only){
+  if (!change_only) {
     doc["name"] = chart->_name;
     doc["type"] = chartTags[chart->_type].type;
   }
@@ -293,31 +274,26 @@ const String ESPDash::generateComponentJSON(Chart* chart, bool change_only){
   JsonArray xAxis = doc["x_axis"].to<JsonArray>();
   switch (chart->_x_axis_type) {
     case GraphAxisType::INTEGER:
-      for(int i=0; i < chart->_x_axis_i.Size(); i++)
-        xAxis.add(chart->_x_axis_i[i]);
+      for (int i = 0; i < chart->_x_axis_i.size(); i++) xAxis.add(chart->_x_axis_i[i]);
       break;
     case GraphAxisType::FLOAT:
-      for(int i=0; i < chart->_x_axis_f.Size(); i++)
-        xAxis.add(chart->_x_axis_f[i]);
+      for (int i = 0; i < chart->_x_axis_f.size(); i++) xAxis.add(chart->_x_axis_f[i]);
       break;
     case GraphAxisType::STRING:
-      for(int i=0; i < chart->_x_axis_s.Size(); i++)
-        xAxis.add(chart->_x_axis_s[i].c_str());
+      for (int i = 0; i < chart->_x_axis_s.size(); i++) xAxis.add(chart->_x_axis_s[i].c_str());
       break;
     default:
       // blank value
       break;
   }
-  
+
   JsonArray yAxis = doc["y_axis"].to<JsonArray>();
   switch (chart->_y_axis_type) {
     case GraphAxisType::INTEGER:
-      for(int i=0; i < chart->_y_axis_i.Size(); i++)
-        yAxis.add(chart->_y_axis_i[i]);
+      for (int i = 0; i < chart->_y_axis_i.size(); i++) yAxis.add(chart->_y_axis_i[i]);
       break;
     case GraphAxisType::FLOAT:
-      for(int i=0; i < chart->_y_axis_f.Size(); i++)
-        yAxis.add(chart->_y_axis_f[i]);
+      for (int i = 0; i < chart->_y_axis_f.size(); i++) yAxis.add(chart->_y_axis_f[i]);
       break;
     default:
       // blank value
@@ -337,15 +313,13 @@ void ESPDash::refreshLayout() {
   _ws->textAll("{\"command\":\"refreshLayout\"}");
 }
 
-
 /*
   Destructor
 */
-ESPDash::~ESPDash(){
+ESPDash::~ESPDash() {
   _server->removeHandler(_ws);
   delete _ws;
 }
-
 
 void ESPDash::updateDevices(String devices_json) {
   devices = devices_json;
@@ -355,7 +329,7 @@ void ESPDash::updateDevices(String devices_json) {
 
 const String ESPDash::serializeStats() {
   String stats = "";
-  
+
   if (stats_enabled) {
     // No need to use json library to build response packet
     stats += "\"enabled\":true,";

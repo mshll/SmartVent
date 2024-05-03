@@ -1,7 +1,9 @@
+/**
+ * @file  dashboard.h
+ * @copyright Copyright (c) 2024
+ */
 
-
-#ifndef __DASHBOARD__H
-#define __DASHBOARD__H
+#pragma once
 
 #include <Arduino.h>
 #include <ESPDash.h>
@@ -15,23 +17,33 @@
 #include "oled.h"
 #include "webserver.h"
 
+#define LOG_SIZE 100
+#define LOG_INTERVAL 10000
+#define RETRY_INTERVAL 3000
+
+void log_data();
+
 AsyncWebServer server(80);
 ESPDash dashboard(&server, true, "/dash");
 extern WebServer webserver;
 bool oled_enabled = true;
 uint32_t last_log = 0;
 
-/*
-  Dashboard Cards
-  Format - (Dashboard Instance, Card Type, Card Name, Card Symbol(optional) )
-*/
+TickTwo data_log_ticker(log_data, LOG_INTERVAL);
+std::vector<String> log_timestamps;
+std::vector<float> log_temperatures;
+std::vector<float> log_humidity;
+std::vector<float> log_co2;
+
 Card temperature(&dashboard, TEMPERATURE_CARD, "Temperature", "°C");
 Card humidity(&dashboard, HUMIDITY_CARD, "Humidity", "%");
-Card co2(&dashboard, AIR_CARD, "", "ppm");
+Card co2(&dashboard, AIR_CARD, "CO2", "ppm");
 Card air_quality(&dashboard, STATUS_CARD, "Air Quality", "idle");
 Card reset_wifi_btn(&dashboard, PUSH_BUTTON_CARD, "Reset Wi-Fi Configuration", "Settings / Wi-Fi");
 Card enable_oled_btn(&dashboard, BUTTON_CARD, "Enable Physical Display", "Settings / Display");
 Card fan_speed(&dashboard, GENERIC_CARD, "Fans Status", "");
+Chart co2_chart(&dashboard, BAR_CHART, "CO2 History");
+Chart temperature_chart(&dashboard, BAR_CHART, "Temperature History");
 
 /* helper functions prototypes */
 void init_dashboard();
@@ -39,6 +51,7 @@ void update_dashboard();
 void dashboard_ticker_handler();
 void set_dashboard_callbacks();
 void update_air_quality_card(float co2);
+void update_charts();
 
 /* Tickers */
 TickTwo dashboard_ticker(dashboard_ticker_handler, 5000, 0, MILLIS);
@@ -48,6 +61,7 @@ TickTwo dashboard_ticker(dashboard_ticker_handler, 5000, 0, MILLIS);
  */
 void init_dashboard() {
   dashboard_ticker.start();
+  data_log_ticker.start();
   set_dashboard_callbacks();
 }
 
@@ -56,6 +70,7 @@ void init_dashboard() {
  */
 void update_dashboard() {
   dashboard_ticker.update();
+  data_log_ticker.update();
   reset_wifi_btn.update(true);
   enable_oled_btn.update(oled_enabled);
 
@@ -79,6 +94,7 @@ void dashboard_ticker_handler() {
   update_air_quality_card(env.co2);
   dashboard.updateDevices(webserver.serialize_devices());
   dashboard.updateStats(webserver.serialize_stats());
+  update_charts();
   dashboard.sendUpdates();
 }
 
@@ -100,6 +116,11 @@ void set_dashboard_callbacks() {
   });
 }
 
+/**
+ * @brief Updates the air quality card based on the CO2 level.
+ *
+ * @param co2 The CO2 level.
+ */
 void update_air_quality_card(float co2) {
   if (co2 < 1000) {
     air_quality.update("Good", "success");
@@ -112,4 +133,44 @@ void update_air_quality_card(float co2) {
   }
 }
 
-#endif
+/**
+ * @brief Logs the environment data for visualization.
+ */
+void log_data() {
+  // If the interval is set to RETRY_INTERVAL, set it back to LOG_INTERVAL
+  if (data_log_ticker.interval() == RETRY_INTERVAL) {
+    data_log_ticker.interval(LOG_INTERVAL);
+  }
+
+  String timestamp = webserver.get_time("%H:%M");
+
+  if (timestamp == "" || isnan(env.temperature) || isnan(env.humidity) || isnan(env.co2)) {
+    data_log_ticker.interval(RETRY_INTERVAL);
+    Serial.println("Failed to log data. Retrying shortly...");
+    return;
+  }
+
+  log_timestamps.push_back(timestamp);
+  log_temperatures.push_back(env.temperature);
+  log_humidity.push_back(env.humidity);
+  log_co2.push_back(env.co2);
+  Serial.println("Logged data: " + timestamp + ", " + String(env.temperature) + ", " + String(env.humidity) + ", " + String(env.co2));
+
+  // Keep the log size to a maximum of LOG_SIZE
+  if (log_temperatures.size() > LOG_SIZE) {
+    log_temperatures.erase(log_temperatures.begin());
+    log_humidity.erase(log_humidity.begin());
+    log_timestamps.erase(log_timestamps.begin());
+    log_co2.erase(log_co2.begin());
+  }
+}
+
+/**
+ * @brief Updates the charts with the latest data.
+ */
+void update_charts() {
+  temperature_chart.updateX(log_timestamps);
+  temperature_chart.updateY(log_temperatures);
+  co2_chart.updateX(log_timestamps);
+  co2_chart.updateY(log_co2);
+}

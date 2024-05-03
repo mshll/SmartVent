@@ -17,7 +17,6 @@ WiFiClient* wifi = new WiFiClientFixed();
  */
 WebServer::WebServer(AsyncWebServer* server, TickTwo* heartbeat_ticker, TickTwo* check_devices_ticker) {
   _server = server;
-  oled_enabled = true;
   is_connected = false;
   device_id = String((uint32_t)ESP.getEfuseMac(), HEX);
   device_name = DEVICE_NAME;

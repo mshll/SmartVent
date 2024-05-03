@@ -3,7 +3,7 @@
 
 #include <functional>
 #include "Arduino.h"
-#include "vector.h"
+#include <vector>
 
 #include "ESPDash.h"
 #include "ArduinoJson.h"
@@ -35,12 +35,12 @@ class Chart {
     GraphAxisType _x_axis_type;
     GraphAxisType _y_axis_type;
     /* X-Axis */
-    Vector<int> _x_axis_i;
-    Vector<float> _x_axis_f;
-    Vector<String> _x_axis_s;
+    std::vector<int> _x_axis_i;
+    std::vector<float> _x_axis_f;
+    std::vector<String> _x_axis_s;
     /* Y-Axis */
-    Vector<int> _y_axis_i;
-    Vector<float> _y_axis_f;
+    std::vector<int> _y_axis_i;
+    std::vector<float> _y_axis_f;
 
   public:
     Chart(ESPDash *dashboard, const int type, const char* name);
@@ -51,7 +51,14 @@ class Chart {
     void updateY(float arr_y[], size_t y_size);
     ~Chart();
 
-  friend class ESPDash;
+    // vector overloads
+    void updateX(const std::vector<int>& x);
+    void updateX(const std::vector<float>& x);
+    void updateX(const std::vector<String>& x);
+    void updateY(const std::vector<int>& y);
+    void updateY(const std::vector<float>& y);
+
+    friend class ESPDash;
 };
 
 #endif

@@ -1,29 +1,26 @@
 <template>
-  <div class="column is-12-mobile is-6-tablet is-5-desktop">
+  <div class="column is-12-mobile is-6-tablet is-6-desktop">
     <div class="card">
       <span class="dot" :class="{'active': activity}"></span>
       <div class="card-content">
         <div class="columns is-mobile is-vcentered">
           <div class="column is-narrow has-text-primary">
-            <div class="card-icon pb-1 pt-2 px-2 has-background-link-light has-text-link">
-              <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <g fill="none" fill-rule="evenodd">
-                  <path d="M0 0h24v24H0z"></path>
-                  <rect fill="currentColor" opacity=".6" x="12" y="4" width="3" height="13" rx="1.5"></rect>
-                  <rect fill="currentColor" opacity=".6" x="7" y="9" width="3" height="8" rx="1.5"></rect>
-                  <path d="M5 19h15a1 1 0 010 2H4a1 1 0 01-1-1V4a1 1 0 112 0v15z" fill="currentColor"></path>
-                  <rect fill="currentColor" opacity=".6" x="17" y="11" width="3" height="6" rx="1.5"></rect>
+            <div class="card-icon pb-1 pt-2 px-2 has-bg-white has-text-black">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                  <path d="M3 4.5v15h17" />
+                  <path d="m19 9l-5 5l-4-4l-3 3" opacity=".6" />
                 </g>
               </svg>
             </div>
           </div>
           <div class="column">
-            <h6 class="is-size-6 has-text-muted">{{chart.name}}</h6>
+            <h6 class="is-size-6 has-text-black has-text-weight-semibold" v-html="chart.name.replace('CO2', 'CO<sub>2</sub>') "></h6>
           </div>
         </div>
         <div class="columns">
           <div class="column is-12">
-            <bar-chartjs :chart-data="chartData" :options="options" height="200px"></bar-chartjs>
+            <line-chartjs :chart-data="chartData" :options="options" height="250px"></line-chartjs>
           </div>
         </div>
       </div>
@@ -32,13 +29,13 @@
 </template>
 
 <script>
-  import BarChartjs from './Charts/Bar';
+  import LineChartjs from './Charts/Bar';
 
   export default {
     props: ['chart'],
 
     components: {
-      BarChartjs
+      LineChartjs
     },
 
     data() {
@@ -94,7 +91,7 @@
           labels: this.chart.x_axis,
           datasets: [{
             label: '',
-            backgroundColor: '#4c73f5',
+            backgroundColor: '#2B2B2B',
             data: this.chart.y_axis
           }]
         }

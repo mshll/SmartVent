@@ -5,6 +5,9 @@
 
 #include "webserver.h"
 #include <ESPDash.h>
+#include "wifiFix.h"
+
+WiFiClient* wifi = new WiFiClientFixed();
 
 /**
  * @brief Constructor for the WebServer class.
@@ -66,6 +69,7 @@ void WebServer::init() {
 
         heartbeat_ticker->start();
         check_devices_ticker->start();
+        setup_time();
 
         _server->begin();
         break;
@@ -311,4 +315,46 @@ const String WebServer::serialize_stats() {
   String json = "\"device_name\":\"" + device_name + "\",\"device_id\":\"" + device_id + "\",\"is_leader\":\"" + String(is_leader) +
                 "\",\"devices_count\":\"" + String(devices.size()) + "\"";
   return json;
+}
+
+void WebServer::setup_time() {
+  HTTPClient http;
+  http.begin("http://worldtimeapi.org/api/ip");
+  int httpCode = http.GET();
+
+  if (httpCode == HTTP_CODE_OK) {
+    String payload = http.getString();
+
+    DynamicJsonDocument doc(1024);
+    deserializeJson(doc, payload);
+    const char* utc_offset = doc["utc_offset"];
+
+    // Parse UTC offset
+    int hourOffset = String(utc_offset).substring(0, 3).toInt();
+    int minOffset = String(utc_offset).substring(4, 6).toInt();
+
+    // Config time uses seconds for the timezone offset, so convert hours to seconds.
+    configTime(hourOffset * 3600 + minOffset * 60, 0, "pool.ntp.org", "time.nist.gov");
+
+    // Wait for time to be set
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo)) {
+      Serial.println("Failed to obtain time");
+      return;
+    }
+    Serial.println("Time set, current time: " + get_time("%A, %B %d %Y %H:%M:%S"));
+  } else {
+    Serial.println("Failed to set time");
+  }
+  http.end();
+}
+
+const String WebServer::get_time(const char* format) {
+  struct tm timeinfo;
+  if (getLocalTime(&timeinfo)) {
+    char buffer[80];
+    strftime(buffer, sizeof(buffer), format, &timeinfo);
+    return String(buffer);
+  }
+  return "";
 }

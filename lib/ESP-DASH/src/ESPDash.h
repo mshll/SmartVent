@@ -56,6 +56,7 @@ class ESPDash{
     const char *username;
     const char *password;
 
+    String stats_addition = "";
     String devices;
 
     // Generate layout json
@@ -95,6 +96,8 @@ class ESPDash{
 
 
     void updateDevices(String devices_json);
+    void updateStats(String stats_json);
+    const String serializeStats();
 };
 
 #endif

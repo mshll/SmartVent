@@ -199,28 +199,7 @@ String ESPDash::generateUpdatesJSON(bool toAll) {
 String ESPDash::generateLayoutJSON(bool only_stats) {
   String cardsData;
   String chartsData;
-  String stats;
-
-  if (stats_enabled) {
-    // No need to use json library to build response packet
-    stats += "\"enabled\":true,";
-    #if defined(ESP8266)
-    stats += "\"hardware\":\"ESP8266\",";
-    stats += "\"sdk\":\"" + ESP.getCoreVersion() + "\",";
-    stats += "\"chipId\":\"" + String(ESP.getChipId()) + "\",";
-    #elif defined(ESP32)
-    stats += "\"hardware\":\"ESP32\",";
-    stats += "\"sdk\":\"" + String(esp_get_idf_version()) + "\",";
-    stats += "\"chipId\":\"" + String((uint32_t) ESP.getEfuseMac()) + "\",";
-    #endif
-
-    stats += "\"sketchHash\":\"" + ESP.getSketchMD5() + "\",";
-    stats += "\"macAddress\":\"" + WiFi.macAddress() + "\",";
-    stats += "\"freeHeap\":\"" + String(ESP.getFreeHeap()) + "\",";
-    stats += "\"wifiMode\":" + String(WiFi.getMode()) + ",";
-    stats += "\"wifiSignal\":" + String(WiFi.RSSI());
-  } else
-    stats = "\"enabled\":\"false\",";
+  String stats = serializeStats();
 
   // only status has been requested
   if (only_stats) {
@@ -371,5 +350,39 @@ ESPDash::~ESPDash(){
 void ESPDash::updateDevices(String devices_json) {
   devices = devices_json;
   const String json = "{\"command\":\"updateDevices\"," + devices + "}";
+  _ws->textAll(json);
+}
+
+const String ESPDash::serializeStats() {
+  String stats = "";
+  
+  if (stats_enabled) {
+    // No need to use json library to build response packet
+    stats += "\"enabled\":true,";
+#if defined(ESP8266)
+    stats += "\"hardware\":\"ESP8266\",";
+    stats += "\"sdk\":\"" + ESP.getCoreVersion() + "\",";
+    stats += "\"chipId\":\"" + String(ESP.getChipId()) + "\",";
+#elif defined(ESP32)
+    stats += "\"hardware\":\"ESP32\",";
+    stats += "\"sdk\":\"" + String(esp_get_idf_version()) + "\",";
+    stats += "\"chipId\":\"" + String((uint32_t)ESP.getEfuseMac()) + "\",";
+#endif
+
+    stats += "\"sketchHash\":\"" + ESP.getSketchMD5() + "\",";
+    stats += "\"macAddress\":\"" + WiFi.macAddress() + "\",";
+    stats += "\"freeHeap\":\"" + String(ESP.getFreeHeap()) + "\",";
+    stats += "\"wifiMode\":" + String(WiFi.getMode()) + ",";
+    stats += "\"wifiSignal\":" + String(WiFi.RSSI()) + ",";
+    stats += stats_addition;
+  } else
+    stats = "\"enabled\":\"false\",";
+
+  return stats;
+}
+
+void ESPDash::updateStats(String stats) {
+  stats_addition = stats;
+  const String json = "{\"command\":\"updateStats\", \"statistics\":{" + serializeStats() + "}}";
   _ws->textAll(json);
 }

@@ -107,7 +107,7 @@ void display_main_screen(float temp, float hum, float co2) {
   u8g2.drawLine(123, 12, 4, 12);
   u8g2.drawXBM(4, 0, 7, 7, image_Pin_star_bits);
   u8g2.setFont(u8g2_font_4x6_mf);
-  u8g2.drawStr(15, 6, get_fan_speed_str());
+  u8g2.drawStr(15, 6, get_fan_speed_str(1));
 
   //********************
 

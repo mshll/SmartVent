@@ -17,6 +17,7 @@
 #define HOSTNAME "smartvent"
 #define AP_SSID "SmartVent AP"
 #define AP_PASS "capstone"
+#define DEVICE_NAME "Smart Vent"
 
 typedef struct {
   String id;
@@ -33,6 +34,7 @@ class WebServer {
   void check_devices();
   void reset_wifi();
   const String serialize_devices();
+  const String serialize_stats();
 
  private:
   AsyncWebServer* _server;
@@ -41,14 +43,13 @@ class WebServer {
   WiFiUDP udp;
   uint udp_port;
   String device_id;
+  String device_name;
   String leader_id;
   bool is_leader;
   IPAddress multicast_ip;
   String hostname;
   std::vector<DeviceInfo> devices;
-  uint heartbeat_interval;
   uint heartbeat_timeout;
-  uint check_devices_interval;
   TickTwo* heartbeat_ticker;
   TickTwo* check_devices_ticker;
   uint32_t last_log;

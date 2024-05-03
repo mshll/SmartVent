@@ -2,7 +2,7 @@
 <div>
   <div class="section pt-1 pb-5">
     <div class="container mt-6">
-      <navbar />
+      <navbar :stats="stats" />
     </div>
   </div>
   <div class="section pt-2">
@@ -40,7 +40,11 @@ export default {
         freeHeap: null,
         heapFragmentation: null,
         wifiMode: null,
-        wifiSignal: null
+        wifiSignal: null,
+        device_name: null,
+        device_id: null,
+        is_leader: null,
+        devices_count: null
       },
       cards: [],
       charts: [],

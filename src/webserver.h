@@ -7,12 +7,15 @@
 #define __WEBSERVER_H__
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <ESPDash.h>
 #include <ESPmDNS.h>
+#include <HTTPClient.h>
 #include <MycilaESPConnect.h>
 #include <TickTwo.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
+#include <time.h>
 
 #define HOSTNAME "smartvent"
 #define AP_SSID "SmartVent AP"
@@ -35,6 +38,7 @@ class WebServer {
   void reset_wifi();
   const String serialize_devices();
   const String serialize_stats();
+  const String get_time(const char* format);
 
  private:
   AsyncWebServer* _server;
@@ -60,6 +64,7 @@ class WebServer {
   void update_device(String id, bool leader);
   void determine_leader();
   int get_device_index(String id);
+  void setup_time();
 };
 
 #endif

@@ -5,18 +5,15 @@
       <div class="card-content">
         <div class="columns is-mobile">
           <div class="column is-narrow">
-            <div class="card-icon pb-3 pt-4 px-4 has-background-grey-dark has-text-white">
-              <svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                <g id="Stockholm-icons-/-Home-/-Ruller" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                    <rect id="bound" x="0" y="0" width="24" height="24"></rect>
-                    <path d="M15,7 L15,8 C15,8.55228475 15.4477153,9 16,9 C16.5522847,9 17,8.55228475 17,8 L17,7 L19,7 L19,10 C19,10.5522847 19.4477153,11 20,11 C20.5522847,11 21,10.5522847 21,10 L21,7 C22.1045695,7 23,7.8954305 23,9 L23,15 C23,16.1045695 22.1045695,17 21,17 L3,17 C1.8954305,17 1,16.1045695 1,15 L1,9 C1,7.8954305 1.8954305,7 3,7 L3,10 C3,10.5522847 3.44771525,11 4,11 C4.55228475,11 5,10.5522847 5,10 L5,7 L7,7 L7,8 C7,8.55228475 7.44771525,9 8,9 C8.55228475,9 9,8.55228475 9,8 L9,7 L11,7 L11,10 C11,10.5522847 11.4477153,11 12,11 C12.5522847,11 13,10.5522847 13,10 L13,7 L15,7 Z" id="Combined-Shape" fill="currentColor" transform="translate(12.000000, 12.000000) rotate(-45.000000) translate(-12.000000, -12.000000) "></path>
-                </g>
+            <div class="card-icon pb-4 pt-5 px-5 has-bg-white has-text-black">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 512 512">
+                <path fill="currentColor" d="M258.6 0c-1.7 0-3.4.1-5.1.5C168 17 115.6 102.3 130.5 189.3c2.9 17 8.4 32.9 15.9 47.4L32 224h-2.6C13.2 224 0 237.2 0 253.4c0 1.7.1 3.4.5 5.1C17 344 102.3 396.4 189.3 381.5c17-2.9 32.9-8.4 47.4-15.9L224 480v2.6c0 16.2 13.2 29.4 29.4 29.4c1.7 0 3.4-.1 5.1-.5c85.5-16.5 137.9-101.8 123-188.8c-2.9-17-8.4-32.9-15.9-47.4L480 288h2.6c16.2 0 29.4-13.2 29.4-29.4c0-1.7-.1-3.4-.5-5.1c-16.5-85.5-101.8-137.9-188.8-123c-17 2.9-32.9 8.4-47.4 15.9L288 32v-2.6C288 13.2 274.8 0 258.6 0M256 224a32 32 0 1 1 0 64a32 32 0 1 1 0-64" />
               </svg>
             </div>
           </div>
           <div class="column">
-            <h6 class="is-size-6 has-text-muted">{{card.name}}</h6>
-            <h2 class="is-size-4 has-text-dark has-text-weight-semibold">{{card.value}} <small class="is-size-6">{{card.symbol}}</small></h2>
+            <h6 class="is-size-6 has-text-black has-text-weight-semibold">{{ card.name }}</h6>
+            <h2 class="is-size-3 has-text-black has-text-weight-bold">{{ card.value }} <small class="is-size-5 has-text-weight-normal has-text-grey">{{ card.symbol }}</small></h2>
           </div>
         </div>
       </div>

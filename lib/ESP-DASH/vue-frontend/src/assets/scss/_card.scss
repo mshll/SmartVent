@@ -1,11 +1,14 @@
-
 // Card Itself
 .card {
-  background-color: #FFF;
-  box-shadow: 0px 0px 50px rgba(232, 232, 232, 0.9);
-  border: 1px solid #eaeaea;
-  border-radius: 8px;
-  
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  background-color: #fff;
+  box-shadow: 0px 0px 50px rgb(228, 228, 231);
+  border: 1px solid rgb(228, 228, 231);
+  border-radius: 0.75rem;
+
   .card-name {
     font-size: 1.05rem;
     font-weight: 400 !important;
@@ -16,8 +19,8 @@
   }
 }
 
-.card-content{
-  .slider{
+.card-content {
+  .slider {
     margin: 0 !important;
     margin-top: 0.5rem !important;
     touch-action: none !important;
@@ -66,28 +69,28 @@
 
 @keyframes waitingdot {
   0% {
-      background: $warning;
+    background: $warning;
   }
 
   50% {
-      background: transparent;
+    background: transparent;
   }
 
   100% {
-      background: $warning;
+    background: $warning;
   }
 }
 
 @-webkit-keyframes waitingdot {
   0% {
-      background: $warning;
+    background: $warning;
   }
 
   50% {
-      background: transparent;
+    background: transparent;
   }
 
   100% {
-      background: $warning;
+    background: $warning;
   }
 }

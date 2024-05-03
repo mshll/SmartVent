@@ -4,6 +4,7 @@
  */
 
 #include "webserver.h"
+#include <ESPDash.h>
 
 /**
  * @brief Constructor for the WebServer class.
@@ -16,14 +17,13 @@ WebServer::WebServer(AsyncWebServer* server, TickTwo* heartbeat_ticker, TickTwo*
   oled_enabled = true;
   is_connected = false;
   device_id = String((uint32_t)ESP.getEfuseMac(), HEX);
+  device_name = DEVICE_NAME;
   leader_id = "";
   is_leader = false;
   multicast_ip = IPAddress(226, 1, 1, 1);
   udp_port = 4096;
   hostname = String(HOSTNAME) + "-" + device_id;
-  heartbeat_interval = 5000;
   heartbeat_timeout = 15000;
-  check_devices_interval = 16000;
   last_log = 0;
 
   this->heartbeat_ticker = heartbeat_ticker;
@@ -225,6 +225,8 @@ void WebServer::check_devices() {
     }
   }
 
+  device_name = DEVICE_NAME + (devices.size() > 1 ? (" " + String(get_device_index(device_id) + 1)) : "");
+
   // If the leader went inactive, initiate an election
   if (leader_inactive) {
     send_election_message();
@@ -245,6 +247,7 @@ void WebServer::determine_leader() {
   // Make the device with the smallest ID the leader
   leader_id = devices.front().id;
   is_leader = (device_id == leader_id);
+  device_name = DEVICE_NAME + (devices.size() > 1 ? (" " + String(get_device_index(device_id) + 1)) : "");
 
   if (was_leader != is_leader) {  // Leader status changed
     MDNS.end();
@@ -289,7 +292,7 @@ const String WebServer::serialize_devices() {
     bool leader = devices[i].id == leader_id;
     json += "{";
     json += "\"id\": \"" + devices[i].id + "\",";
-    json += "\"name\": \"Smart Vent" + (devices.size() > 1 ? (" " + String(i + 1)) : "") + "\",";
+    json += "\"name\": \"" + (device_id == devices[i].id ? device_name : "Smart Vent " + String(i + 1)) + "\",";
     json += "\"url\": \"http://" + String(HOSTNAME) + (leader ? "" : "-" + devices[i].id) + ".local\",";
     json += "\"is_leader\": " + String(leader) + ",";
     json += "\"this_device\": " + String(devices[i].id == device_id);
@@ -301,5 +304,11 @@ const String WebServer::serialize_devices() {
   }
   json += "]";
   // Serial.println("Devices JSON: \n" + json);
+  return json;
+}
+
+const String WebServer::serialize_stats() {
+  String json = "\"device_name\":\"" + device_name + "\",\"device_id\":\"" + device_id + "\",\"is_leader\":\"" + String(is_leader) +
+                "\",\"devices_count\":\"" + String(devices.size()) + "\"";
   return json;
 }

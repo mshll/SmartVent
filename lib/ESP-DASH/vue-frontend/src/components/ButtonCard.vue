@@ -5,7 +5,8 @@
       <div class="card-content">
         <div class="columns is-mobile is-vcentered">
           <div class="column has-text-left">
-            <h6 class="is-size-6 has-text-black has-text-weight-semibold">{{ card.name }}</h6>
+            <h6 class="is-size-7 has-text-grey has-text-weight-medium mb-1 is-family-monospace">{{ card.symbol }}</h6>
+            <h2 class="is-size-5 has-text-black has-text-weight-semibold">{{ card.name }}</h2>
           </div>
           <div class="column is-narrow">
             <!-- <transition name="btn-fade" mode="out-in"> -->

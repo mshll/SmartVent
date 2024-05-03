@@ -41,8 +41,10 @@ void update_fans(int co2) {
     set_fan_speed(FAN_MEDIUM);
   } else if (co2 < 2000) {
     set_fan_speed(FAN_HIGH);
-  } else {
+  } else if (co2 >= 2000) {
     set_fan_speed(FAN_MAX);
+  } else {
+    set_fan_speed(FAN_OFF);
   }
 }
 
@@ -71,20 +73,20 @@ FanSpeed get_fan_speed() {
   return current_fan_speed;
 }
 
-const char *get_fan_speed_str() {
+const char *get_fan_speed_str(bool is_short) {
   switch (current_fan_speed) {
     case FAN_OFF:
-      return "OFF";
+      return is_short ? "OFF" : "Off";
     case FAN_LOW:
-      return "LOW";
+      return is_short ? "LOW" : "Low";
     case FAN_MEDIUM:
-      return "MED";
+      return is_short ? "MED" : "Medium";
     case FAN_HIGH:
-      return "HIGH";
+      return is_short ? "HIGH" : "High";
     case FAN_MAX:
-      return "MAX";
+      return is_short ? "MAX" : "Max";
     default:
-      return "UNKNOWN";
+      return is_short ? "UNKNOWN" : "Unknown";
   }
 }
 

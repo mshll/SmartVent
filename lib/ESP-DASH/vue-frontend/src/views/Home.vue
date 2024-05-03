@@ -2,11 +2,11 @@
   <div>
     <div class="container" v-if="cards.length > 0 || charts.length > 0">
       <div class="columns is-mobile is-multiline">
-        <generic-card v-for="card in getParticularCards('generic')" :key="card.id" :card="card"></generic-card>
+        <status-card v-for="card in getParticularCards('status')" :key="card.id" :card="card"></status-card>
         <air-card v-for="card in getParticularCards('air')" :key="card.id" :card="card"></air-card>
         <temperature-card v-for="card in getParticularCards('temperature')" :key="card.id" :card="card"></temperature-card>
         <humdidity-card v-for="card in getParticularCards('humidity')" :key="card.id" :card="card"></humdidity-card>
-        <status-card v-for="card in getParticularCards('status')" :key="card.id" :card="card"></status-card>
+        <generic-card v-for="card in getParticularCards('generic')" :key="card.id" :card="card"></generic-card>
         <progress-card v-for="card in getParticularCards('progress')" :key="card.id" :card="card"></progress-card>
         <slider-card v-for="card in getParticularCards('slider')" :key="card.id" :card="card"></slider-card>
         <button-card v-for="card in getParticularCards('button')" :key="card.id" :card="card"></button-card>

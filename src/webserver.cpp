@@ -22,7 +22,7 @@ WebServer::WebServer(AsyncWebServer* server, TickTwo* heartbeat_ticker, TickTwo*
   device_name = DEVICE_NAME;
   leader_id = "";
   is_leader = false;
-  multicast_ip = IPAddress(226, 1, 1, 1);
+  multicast_ip = IPAddress(233, 255, 255, 255);
   udp_port = 4096;
   hostname = String(HOSTNAME) + "-" + device_id;
   heartbeat_timeout = 15000;
@@ -96,6 +96,8 @@ void WebServer::loop() {
   ESPConnect.loop();
 
   if (millis() - last_log > 5000) {
+    Serial.println("IP: " + WiFi.localIP().toString());
+    Serial.println("MAC: " + WiFi.macAddress());
     Serial.println("ID: " + device_id + " // " + "Leader: " + leader_id + " // " + "URL: http://" + (is_leader ? HOSTNAME : hostname) + ".local");
     last_log = millis();
   }

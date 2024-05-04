@@ -11,8 +11,8 @@
           <div class="column is-narrow">
             <!-- <transition name="btn-fade" mode="out-in"> -->
             <div class="pt-2">
-              <input id="btn-switch" type="checkbox" name="btn-switch" class="switch is-medium is-rounded is-black" :checked="card.value == 1" @change="sendClickEvent">
-              <label for="btn-switch"></label>
+              <input :id="'btn-switch-' + card.id" type="checkbox" :name="'button-radio-' + card.id" class="switch is-medium is-rounded is-black" :checked="card.value == 1" @change="sendClickEvent">
+              <label :for="'btn-switch-' + card.id"></label>
             </div>
             <!-- </transition> -->
           </div>

@@ -530,12 +530,10 @@ void loop() {
     else {
         // Selecting Menu Options
         if (selectedMenuItem == 0){
-            // TODO: Test display_select_menu(selectedMenuItem) function
             display_select_menu(currentMenuItem);
         }
         // Selected CO2 Level Options
         if (selectedMenuItem == 1){
-            // Set Selected Menu Item
             display_CO2_menu(selectedMenuItem-1);
         }
         // Selected Fan Speed Option

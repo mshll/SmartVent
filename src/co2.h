@@ -14,7 +14,7 @@
 
 #define MQ135_PIN 33
 
-MQ135 mq135_sensor = MQ135(MQ135_PIN, 47.0, 22.0);
+MQ135 mq135_sensor = MQ135(MQ135_PIN, 58.0, 22.0);
 
 /* function declarations */
 void init_co2();
@@ -38,24 +38,21 @@ void init_co2() {
  */
 float get_co2(float temperature, float humidity) {
   int val = analogRead(MQ135_PIN);
-  Serial.print("raw = ");
-  Serial.println(val);
-
   float zero = mq135_sensor.getRZero();
-  Serial.print("rzero: ");
-  Serial.println(zero);
-
   float corrected_rzero = mq135_sensor.getCorrectedRZero(temperature, humidity);
-  Serial.print("corrected rzero: ");
-  Serial.println(corrected_rzero);
-
   float ppm = mq135_sensor.getPPM();
-  Serial.print("ppm: ");
-  Serial.println(ppm);
-
   float corrected_ppm = mq135_sensor.getCorrectedPPM(temperature, humidity);
-  Serial.print("corrected ppm: ");
-  Serial.println(corrected_ppm);
+
+  // Serial.print("raw = ");
+  // Serial.println(val);
+  // Serial.print("rzero: ");
+  // Serial.println(zero);
+  // Serial.print("corrected rzero: ");
+  // Serial.println(corrected_rzero);
+  // Serial.print("ppm: ");
+  // Serial.println(ppm);
+  // Serial.print("corrected ppm: ");
+  // Serial.println(corrected_ppm);
 
   return corrected_ppm;
 }

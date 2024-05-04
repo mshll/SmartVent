@@ -10,8 +10,8 @@
           </div>
           <div class="column is-narrow">
             <div class="py-3">
-              <input class="is-checkradio is-large is-black" id="button-radio" type="radio" name="button-radio" :checked="!pushButtonClicked" @click="sendClickEvent">
-              <label for="button-radio" class="mx-0"></label>
+              <input class="is-checkradio is-large is-black" :id="'button-radio-' + card.id" type="radio" :name="'button-radio-' + card.id" :checked="!pushButtonClicked" @click="sendClickEvent">
+              <label :for="'button-radio-' + card.id" class="mx-0"></label>
             </div>
           </div>
         </div>

@@ -20,6 +20,7 @@
 #define LOG_SIZE 100
 #define LOG_INTERVAL 10000
 #define RETRY_INTERVAL 3000
+#define DASH_REFRESH_INTERVAL 2000
 
 void log_data();
 
@@ -42,6 +43,7 @@ Card air_quality(&dashboard, STATUS_CARD, "Air Quality", "idle");
 Card reset_wifi_btn(&dashboard, PUSH_BUTTON_CARD, "Reset Wi-Fi Configuration", "Settings / Wi-Fi");
 Card enable_oled_btn(&dashboard, BUTTON_CARD, "Enable Physical Display", "Settings / Display");
 Card fan_speed(&dashboard, GENERIC_CARD, "Fans Status", "");
+Card fans_override_btn(&dashboard, BUTTON_CARD, "Force Fans Off", "Settings / Fans");
 Chart co2_chart(&dashboard, BAR_CHART, "CO2 History");
 Chart temperature_chart(&dashboard, BAR_CHART, "Temperature History");
 
@@ -54,7 +56,7 @@ void update_air_quality_card(float co2);
 void update_charts();
 
 /* Tickers */
-TickTwo dashboard_ticker(dashboard_ticker_handler, 5000, 0, MILLIS);
+TickTwo dashboard_ticker(dashboard_ticker_handler, DASH_REFRESH_INTERVAL, 0, MILLIS);
 
 /**
  * @brief Initializes the dashboard.
@@ -73,6 +75,7 @@ void update_dashboard() {
   data_log_ticker.update();
   reset_wifi_btn.update(true);
   enable_oled_btn.update(oled_enabled);
+  fans_override_btn.update(fans_override);
 
   // if (millis() - last_log > 5000) {
   //   JsonDocument doc;
@@ -113,6 +116,13 @@ void set_dashboard_callbacks() {
     dashboard.sendUpdates();
     Serial.println("Toggling OELD!\n");
     oled_enabled = !oled_enabled;
+  });
+
+  fans_override_btn.attachCallback([&](bool value) {
+    fans_override_btn.update(value);
+    dashboard.sendUpdates();
+    fans_override = !fans_override;
+    dashboard_ticker_handler();
   });
 }
 

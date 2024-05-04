@@ -12,7 +12,7 @@
 #include <Arduino.h>
 #include <DHTesp.h>
 
-#define DHT_PIN 27  // 19
+#define DHT_PIN 32
 #define DHT_TYPE DHTesp::DHT11
 
 DHTesp dht;

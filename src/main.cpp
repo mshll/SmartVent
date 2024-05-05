@@ -25,6 +25,7 @@
 #include "dashboard.h"
 #include "environment.h"
 #include "fans.h"
+#include "mhz19b.h"
 #include "oled.h"
 #include "webserver.h"
 
@@ -42,6 +43,7 @@ extern AsyncWebServer server;  // defined in dashboard.h
 TickTwo heartbeat_ticker(send_heartbeat, 5000 /*ms*/);
 TickTwo check_devices_ticker(check_devices, 16000 /*ms*/);
 WebServer webserver(&server, &heartbeat_ticker, &check_devices_ticker);
+MHZ19B mhz19b;
 
 void setup() {
   Serial.begin(9600);
@@ -51,6 +53,7 @@ void setup() {
   init_environment();
   init_fans();
   webserver.init();
+  mhz19b.init();
   init_dashboard();
   delay(2000);
 }
@@ -64,6 +67,7 @@ void loop() {
   }
 
   webserver.loop();
+  mhz19b.loop();
   update_dashboard();
   // update_buttons();
 }

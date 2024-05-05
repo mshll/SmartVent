@@ -14,6 +14,7 @@
 #include <WiFiUdp.h>
 #include "environment.h"
 #include "fans.h"
+#include "mhz19b.h"
 #include "oled.h"
 #include "webserver.h"
 
@@ -27,6 +28,7 @@ void log_data();
 AsyncWebServer server(80);
 ESPDash dashboard(&server, true, "/dash");
 extern WebServer webserver;
+extern MHZ19B mhz19b;
 bool oled_enabled = true;
 uint32_t last_log = 0;
 
@@ -77,24 +79,27 @@ void update_dashboard() {
   enable_oled_btn.update(oled_enabled);
   fans_override_btn.update(fans_override);
 
-  // if (millis() - last_log > 5000) {
-  //   JsonDocument doc;
-  //   ESPConnect.toJson(doc.to<JsonObject>());
-  //   serializeJson(doc, Serial);
-  //   Serial.println();
-  //   last_log = millis();
-  // }
+  if (millis() - last_log > 5000) {
+    // JsonDocument doc;
+    // ESPConnect.toJson(doc.to<JsonObject>());
+    // serializeJson(doc, Serial);
+    // Serial.println();
+
+    mhz19b.set_unit(mhz19b.get_unit() == CELSIUS ? FAHRENHEIT : CELSIUS);
+
+    last_log = millis();
+  }
 }
 
 /**
  * @brief Periodically updates the dashboard with the latest environment data.
  */
 void dashboard_ticker_handler() {
-  temperature.update(env.temperature);
-  humidity.update(env.humidity);
+  temperature.update(mhz19b.get_temperature(), mhz19b.get_unit() == FAHRENHEIT ? FAHRENHEIT_SYMBOL : CELSIUS_SYMBOL);
+  humidity.update(0);
   fan_speed.update(get_fan_speed_str(0));
-  co2.update(env.co2);
-  update_air_quality_card(env.co2);
+  co2.update(mhz19b.get_co2());
+  update_air_quality_card(mhz19b.get_co2());
   dashboard.updateDevices(webserver.serialize_devices());
   dashboard.updateStats(webserver.serialize_stats());
   update_charts();
@@ -153,18 +158,20 @@ void log_data() {
   }
 
   String timestamp = webserver.get_time("%H:%M");
+  int co2 = mhz19b.get_co2();
+  float temperature = mhz19b.get_temperature();
 
-  if (timestamp == "" || isnan(env.temperature) || isnan(env.humidity) || isnan(env.co2)) {
+  if (timestamp == "" || isnan(temperature) || isnan(co2)) {
     data_log_ticker.interval(RETRY_INTERVAL);
     Serial.println("Failed to log data. Retrying shortly...");
     return;
   }
 
   log_timestamps.push_back(timestamp);
-  log_temperatures.push_back(env.temperature);
-  log_humidity.push_back(env.humidity);
-  log_co2.push_back(env.co2);
-  Serial.println("Logged data: " + timestamp + ", " + String(env.temperature) + ", " + String(env.humidity) + ", " + String(env.co2));
+  log_temperatures.push_back(temperature);
+  // log_humidity.push_back(humidity);
+  log_co2.push_back(co2);
+  Serial.println("Logged data: " + timestamp + ", " + String(temperature) + ", " + String(co2));
 
   // Keep the log size to a maximum of LOG_SIZE
   if (log_temperatures.size() > LOG_SIZE) {

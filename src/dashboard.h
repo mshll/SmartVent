@@ -12,7 +12,6 @@
 #include <TickTwo.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#include "environment.h"
 #include "fans.h"
 #include "mhz19b.h"
 #include "oled.h"
@@ -35,11 +34,9 @@ uint32_t last_log = 0;
 TickTwo data_log_ticker(log_data, LOG_INTERVAL);
 std::vector<String> log_timestamps;
 std::vector<float> log_temperatures;
-std::vector<float> log_humidity;
 std::vector<float> log_co2;
 
 Card temperature(&dashboard, TEMPERATURE_CARD, "Temperature", "°C");
-Card humidity(&dashboard, HUMIDITY_CARD, "Humidity", "%");
 Card co2(&dashboard, AIR_CARD, "CO2", "ppm");
 Card air_quality(&dashboard, STATUS_CARD, "Air Quality", "idle");
 Card reset_wifi_btn(&dashboard, PUSH_BUTTON_CARD, "Reset Wi-Fi Configuration", "Settings / Wi-Fi");
@@ -96,7 +93,6 @@ void update_dashboard() {
  */
 void dashboard_ticker_handler() {
   temperature.update(mhz19b.get_temperature(), mhz19b.get_unit() == FAHRENHEIT ? FAHRENHEIT_SYMBOL : CELSIUS_SYMBOL);
-  humidity.update(0);
   fan_speed.update(get_fan_speed_str(0));
   co2.update(mhz19b.get_co2());
   update_air_quality_card(mhz19b.get_co2());
@@ -169,14 +165,11 @@ void log_data() {
 
   log_timestamps.push_back(timestamp);
   log_temperatures.push_back(temperature);
-  // log_humidity.push_back(humidity);
   log_co2.push_back(co2);
-  Serial.println("Logged data: " + timestamp + ", " + String(temperature) + ", " + String(co2));
 
   // Keep the log size to a maximum of LOG_SIZE
   if (log_temperatures.size() > LOG_SIZE) {
     log_temperatures.erase(log_temperatures.begin());
-    log_humidity.erase(log_humidity.begin());
     log_timestamps.erase(log_timestamps.begin());
     log_co2.erase(log_co2.begin());
   }

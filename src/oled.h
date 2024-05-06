@@ -12,7 +12,6 @@
 #define __OLED__H
 
 #include <Arduino.h>
-#include <MQ135.h>
 #include <MycilaESPConnect.h>
 #include <U8g2lib.h>
 
@@ -110,12 +109,6 @@ void display_main_screen(float temp, float hum, float co2) {
   u8g2.drawStr(15, 6, get_fan_speed_str(1));
 
   //********************
-
-  u8g2.setFont(u8g2_font_04b_03_tr);
-  float rzero = mq135_sensor.getRZero();
-  float corrected_rzero = mq135_sensor.getCorrectedRZero(temp, hum);
-  // u8g2.drawStr(10, 5, ("r0: " + String(rzero, 2) + "   r0c: " + String(corrected_rzero, 2)).c_str());
-  // u8g2.drawStr(50, 9, ("r0c: " + String(corrected_rzero, 2)).c_str());
 
   u8g2.sendBuffer();
 }

@@ -30,16 +30,10 @@
 #define OLED_SCL 22
 #define OLED_SDA 23
 
-/* helper functions prototypes */
-void send_heartbeat();
-void check_devices();
-
 /* global variables */
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, OLED_SCL, OLED_SDA);
 extern AsyncWebServer server;  // defined in dashboard.h
-TickTwo heartbeat_ticker(send_heartbeat, 5000 /*ms*/);
-TickTwo check_devices_ticker(check_devices, 16000 /*ms*/);
-WebServer webserver(&server, &heartbeat_ticker, &check_devices_ticker);
+WebServer webserver(&server);
 MHZ19B mhz19b;
 
 void setup() {
@@ -66,14 +60,4 @@ void loop() {
   mhz19b.loop();
   update_dashboard();
   // update_buttons();
-}
-
-// send_heartbeat function wrapper
-void send_heartbeat() {
-  webserver.send_heartbeat();
-}
-
-// check_devices function wrapper
-void check_devices() {
-  webserver.check_devices();
 }

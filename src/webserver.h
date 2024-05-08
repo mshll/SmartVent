@@ -3,8 +3,7 @@
  * @copyright Copyright (c) 2024
  */
 
-#ifndef __WEBSERVER_H__
-#define __WEBSERVER_H__
+#pragma once
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -30,11 +29,10 @@ typedef struct {
 
 class WebServer {
  public:
-  WebServer(AsyncWebServer* server, TickTwo* heartbeat_ticker, TickTwo* check_devices_ticker);
+  WebServer(AsyncWebServer* server);
+  ~WebServer();
   void init();
   void loop();
-  void send_heartbeat();
-  void check_devices();
   void reset_wifi();
   const String serialize_devices();
   const String serialize_stats();
@@ -59,11 +57,11 @@ class WebServer {
 
   void setup_mdns();
   void send_election_message();
+  void send_heartbeat();
+  void check_devices();
   void handle_incoming_packets();
   void update_device(String id, bool leader);
   void determine_leader();
   int get_device_index(String id);
   void setup_time();
 };
-
-#endif

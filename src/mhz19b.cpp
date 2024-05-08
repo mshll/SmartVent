@@ -8,16 +8,14 @@
 
 #define READING_INTERVAL 2000
 
-void update_data();
-
 HardwareSerial mhz19b_serial(1);
-TickTwo mhz19b_ticker(update_data, READING_INTERVAL);
 
 MHZ19B::MHZ19B() {
   mhz19b = MHZ19();
   co2 = 0;
   temperature = 0.0;
   unit = CELSIUS;
+  mhz19b_ticker = new TickTwo(std::bind(&MHZ19B::update_data, this), READING_INTERVAL);
 }
 
 void MHZ19B::init() {
@@ -25,11 +23,11 @@ void MHZ19B::init() {
   mhz19b.begin(mhz19b_serial);
 
   mhz19b.autoCalibration(true);
-  mhz19b_ticker.start();
+  mhz19b_ticker->start();
 }
 
 void MHZ19B::loop() {
-  mhz19b_ticker.update();
+  mhz19b_ticker->update();
 }
 
 void MHZ19B::update_data() {
@@ -59,10 +57,4 @@ int MHZ19B::get_co2() {
 float MHZ19B::get_temperature() {
   if (unit == FAHRENHEIT) return temperature * 1.8 + 32;
   return temperature;
-}
-
-extern MHZ19B mhz19b;
-
-void update_data() {
-  mhz19b.update_data();
 }

@@ -32,4 +32,5 @@ class MHZ19B {
   int co2;
   float temperature;
   TemperatureUnit unit;
+  TickTwo* mhz19b_ticker;
 };

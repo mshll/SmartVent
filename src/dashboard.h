@@ -17,10 +17,14 @@
 #include "oled.h"
 #include "webserver.h"
 
-#define LOG_SIZE 100
-#define LOG_INTERVAL 10000
-#define RETRY_INTERVAL 3000
 #define DASH_REFRESH_INTERVAL 2000
+#define LOG_SIZE 100
+#define LOG_INTERVAL 600000         // 10 minutes
+#define RETRY_INTERVAL 5000         // 5 seconds
+#define TIME_ADJUST_INTERVAL 30000  // 30 seconds
+// #define LOG_INTERVAL 1000
+// #define RETRY_INTERVAL 500
+// #define TIME_ADJUST_INTERVAL 1000
 
 void log_data();
 
@@ -31,7 +35,7 @@ extern MHZ19B mhz19b;
 bool oled_enabled = true;
 uint32_t last_log = 0;
 
-TickTwo data_log_ticker(log_data, LOG_INTERVAL);
+TickTwo data_log_ticker(log_data, 30000);
 std::vector<String> log_timestamps;
 std::vector<float> log_temperatures;
 std::vector<float> log_co2;
@@ -148,16 +152,22 @@ void update_air_quality_card(float co2) {
  * @brief Logs the environment data for visualization.
  */
 void log_data() {
-  // If the interval is set to RETRY_INTERVAL, set it back to LOG_INTERVAL
-  if (data_log_ticker.interval() == RETRY_INTERVAL) {
+  // Adjust the interval to log data exactly at 10-minute intervals
+  if (webserver.get_time("%M").toInt() % 10 != 0) {
+    data_log_ticker.interval(TIME_ADJUST_INTERVAL);
+    return;
+  }
+
+  // Reset the interval back to the default
+  if (data_log_ticker.interval() != LOG_INTERVAL) {
     data_log_ticker.interval(LOG_INTERVAL);
   }
 
-  String timestamp = webserver.get_time("%H:%M");
+  String timestamp = webserver.get_time("%Y-%m-%dT%H:%M:%S");
   int co2 = mhz19b.get_co2();
   float temperature = mhz19b.get_temperature();
 
-  if (timestamp == "" || isnan(temperature) || isnan(co2)) {
+  if (timestamp == "" || isnan(temperature) || isnan(co2) || co2 < 100) {
     data_log_ticker.interval(RETRY_INTERVAL);
     Serial.println("Failed to log data. Retrying shortly...");
     return;

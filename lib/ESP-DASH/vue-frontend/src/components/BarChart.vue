@@ -1,7 +1,6 @@
 <template>
-  <div class="column is-12-mobile is-6-tablet is-6-desktop">
+  <div class="column is-12">
     <div class="card">
-      <span class="dot" :class="{'active': activity}"></span>
       <div class="card-content">
         <div class="columns is-mobile is-vcentered">
           <div class="column is-narrow has-text-primary">
@@ -20,7 +19,7 @@
         </div>
         <div class="columns">
           <div class="column is-12">
-            <line-chartjs :chart-data="chartData" :options="options" height="250px"></line-chartjs>
+            <line-chartjs :chart-data="chartData" :options="options" height="300px"></line-chartjs>
           </div>
         </div>
       </div>
@@ -44,15 +43,33 @@
         options: {
           responsive: true,
           aspectRatio: 1,
-          height: 200,
+          maintainAspectRatio: false,
+          height: 300,
           legend: {
             display: false
           },
           scales: {
             xAxes: [{
-              barPercentage: 0.6,
-              gridLines: {
-                display: false
+              type: 'time',
+              time: {
+                parser: 'YYYY-MM-DDTHH:mm:ss',
+                tooltipFormat: 'lll',
+                displayFormats: {
+                  'millisecond': 'HH:mm',
+                  'second': 'HH:mm',
+                  'minute': 'HH:mm',
+                  'hour': 'HH:mm',
+                  'day': 'HH:mm',
+                  'week': 'HH:mm',
+                  'month': 'HH:mm',
+                  'quarter': 'HH:mm',
+                  'year': 'HH:mm',
+                },
+              },
+              distribution: 'linear',
+              ticks: {
+                autoSkip: true,
+                autoSkipPadding: 30,
               }
             }],
           }
@@ -92,6 +109,9 @@
           datasets: [{
             label: '',
             backgroundColor: '#2B2B2B',
+            pointRadius: 1,
+            pointHoverRadius: 5,
+            pointHitRadius: 5,
             data: this.chart.y_axis
           }]
         }

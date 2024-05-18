@@ -6,20 +6,9 @@
 #pragma once
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
+#include <AsyncTCP.h>
 #include <ESPDash.h>
-#include <ESPmDNS.h>
-#include <HTTPClient.h>
-#include <MycilaESPConnect.h>
 #include <TickTwo.h>
-#include <WiFi.h>
-#include <WiFiUdp.h>
-#include <time.h>
-
-#define HOSTNAME "smartvent"
-#define AP_SSID "SmartVent AP"
-#define AP_PASS "capstone"
-#define DEVICE_NAME "Smart Vent"
 
 typedef struct {
   String id;

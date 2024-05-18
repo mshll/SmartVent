@@ -4,7 +4,7 @@
  */
 
 #include "mhz19b.h"
-#include <TickTwo.h>
+#include "common.h"
 
 #define READING_INTERVAL 2000
 

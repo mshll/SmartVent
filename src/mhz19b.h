@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <Arduino.h>
 #include <MHZ19.h>
+#include <TickTwo.h>
 
 #define CELSIUS_SYMBOL "°C"
 #define FAHRENHEIT_SYMBOL "°F"

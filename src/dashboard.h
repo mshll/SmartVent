@@ -5,20 +5,14 @@
 
 #pragma once
 
-#include <Arduino.h>
-#include <ESPDash.h>
-#include <ESPmDNS.h>
-#include <MycilaESPConnect.h>
-#include <TickTwo.h>
-#include <WiFi.h>
-#include <WiFiUdp.h>
+#include "common.h"
 #include "fans.h"
 #include "mhz19b.h"
 #include "oled.h"
 #include "webserver.h"
 
 #define DASH_REFRESH_INTERVAL 2000
-#define LOG_SIZE 100
+#define LOG_SIZE 144
 #define LOG_INTERVAL 600000         // 10 minutes
 #define RETRY_INTERVAL 5000         // 5 seconds
 #define TIME_ADJUST_INTERVAL 30000  // 30 seconds
@@ -32,7 +26,8 @@ AsyncWebServer server(80);
 ESPDash dashboard(&server, true, "/dash");
 extern WebServer webserver;
 extern MHZ19B mhz19b;
-bool oled_enabled = true;
+extern OLED oled;
+extern Fans fans;
 uint32_t last_log = 0;
 
 TickTwo data_log_ticker(log_data, 30000);
@@ -77,8 +72,8 @@ void update_dashboard() {
   dashboard_ticker.update();
   data_log_ticker.update();
   reset_wifi_btn.update(true);
-  enable_oled_btn.update(oled_enabled);
-  fans_override_btn.update(fans_override);
+  enable_oled_btn.update(oled.is_enabled());
+  fans_override_btn.update(fans.get_override());
 
   if (millis() - last_log > 5000) {
     // JsonDocument doc;
@@ -86,7 +81,7 @@ void update_dashboard() {
     // serializeJson(doc, Serial);
     // Serial.println();
 
-    mhz19b.set_unit(mhz19b.get_unit() == CELSIUS ? FAHRENHEIT : CELSIUS);
+    // mhz19b.set_unit(mhz19b.get_unit() == CELSIUS ? FAHRENHEIT : CELSIUS);
 
     last_log = millis();
   }
@@ -97,7 +92,7 @@ void update_dashboard() {
  */
 void dashboard_ticker_handler() {
   temperature.update(mhz19b.get_temperature(), mhz19b.get_unit() == FAHRENHEIT ? FAHRENHEIT_SYMBOL : CELSIUS_SYMBOL);
-  fan_speed.update(get_fan_speed_str(0));
+  fan_speed.update(fans.get_speed(0));
   co2.update(mhz19b.get_co2());
   update_air_quality_card(mhz19b.get_co2());
   dashboard.updateDevices(webserver.serialize_devices());
@@ -120,13 +115,13 @@ void set_dashboard_callbacks() {
     enable_oled_btn.update(value);
     dashboard.sendUpdates();
     Serial.println("Toggling OELD!\n");
-    oled_enabled = !oled_enabled;
+    oled.toggle();
   });
 
   fans_override_btn.attachCallback([&](bool value) {
     fans_override_btn.update(value);
     dashboard.sendUpdates();
-    fans_override = !fans_override;
+    fans.toggle_override();
     dashboard_ticker_handler();
   });
 }

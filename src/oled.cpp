@@ -9,6 +9,10 @@
 #include "mhz19b.h"
 
 #define TICKER_INTERVAL 3000
+#define LCDWidth u8g2->getDisplayWidth()
+#define ALIGN_CENTER(t) ((LCDWidth - (u8g2->getUTF8Width(t))) / 2)
+#define ALIGN_RIGHT(t) (LCDWidth - u8g2->getUTF8Width(t))
+#define ALIGN_LEFT 0
 
 extern MHZ19B mhz19b;
 extern Fans fans;
@@ -19,8 +23,8 @@ void split_float(float number, String &int_part, String &dec_part);
 OLED::OLED() {
   u8g2 = new U8G2_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0, U8X8_PIN_NONE, OLED_SCL, OLED_SDA);
   current_screen = SPLASH_SCREEN;
-
-  oled_ticker = new TickTwo(std::bind(&OLED::oled_ticker_callback, this), TICKER_INTERVAL, 1);
+  enabled = true;
+  splash_screen_ticker = new TickTwo(std::bind(&OLED::splash_screen_ticker_callback, this), TICKER_INTERVAL, 1);
 }
 
 void OLED::init() {
@@ -28,23 +32,25 @@ void OLED::init() {
   u8g2->clearBuffer();
   u8g2->setFont(u8g2_font_ncenB14_tr);
 
-  oled_ticker->start();
+  splash_screen_ticker->start();
 }
 
 void OLED::loop() {
   u8g2->clearBuffer();
 
-  switch (current_screen) {
-    case SPLASH_SCREEN:
-      display_splash_screen();
-      break;
-    case MAIN_SCREEN:
-      display_main_screen();
-      break;
+  if (enabled) {
+    switch (current_screen) {
+      case SPLASH_SCREEN:
+        display_splash_screen();
+        break;
+      case MAIN_SCREEN:
+        display_main_screen();
+        break;
+    }
   }
 
   u8g2->sendBuffer();
-  oled_ticker->update();
+  splash_screen_ticker->update();
 }
 
 /**
@@ -58,73 +64,59 @@ void OLED::display_main_screen() {
   String temp_int, temp_dec;
   split_float(mhz19b.get_temperature(), temp_int, temp_dec);
   int co2 = mhz19b.get_co2();
-  static const unsigned char image_wifi_on_bits[] U8X8_PROGMEM = {0xfe, 0x00, 0x01, 0x01, 0x7c, 0x00, 0x82, 0x00, 0x38, 0x00, 0x00, 0x00, 0x10, 0x00};
-  static const unsigned char image_wifi_off_bits[] U8X8_PROGMEM = {0xd6, 0x00, 0x11, 0x01, 0x54, 0x00, 0x92,
-                                                                   0x00, 0x10, 0x00, 0x00, 0x00, 0x10, 0x00};
+  const char *air_quality = mhz19b.get_air_quality();
+
+  static const unsigned char image_paint_0_bits[] U8X8_PROGMEM = {0x3c, 0x1c, 0x00, 0x66, 0x36, 0x00, 0x43, 0x63, 0x00, 0x03, 0x63, 0x02,
+                                                                  0x03, 0x63, 0x05, 0x43, 0x63, 0x04, 0x66, 0x36, 0x02, 0x3c, 0x1c, 0x07};
   static const unsigned char image_temperature_bits[] U8X8_PROGMEM = {0x70, 0x00, 0x88, 0x00, 0xa8, 0x00, 0xa8, 0x00, 0xa8, 0x00, 0xa8,
                                                                       0x00, 0xa8, 0x00, 0xa8, 0x00, 0xa8, 0x00, 0x24, 0x01, 0x72, 0x02,
                                                                       0xea, 0x02, 0xfa, 0x02, 0x72, 0x02, 0x04, 0x01, 0xf8, 0x00};
-  static const unsigned char image_weather_humidity_bits[] U8X8_PROGMEM = {0x20, 0x00, 0x20, 0x00, 0x30, 0x00, 0x70, 0x00, 0x78, 0x00, 0xf8,
-                                                                           0x00, 0xfc, 0x01, 0xfc, 0x01, 0x7e, 0x03, 0xfe, 0x02, 0xff, 0x06,
-                                                                           0xff, 0x07, 0xfe, 0x03, 0xfe, 0x03, 0xfc, 0x01, 0xf0, 0x00};
-  static const unsigned char image_percent_bits[] U8X8_PROGMEM = {0xc2, 0x00, 0x65, 0x00, 0x32, 0x00, 0x98, 0x00, 0x4c, 0x01, 0x86, 0x00};
-  static const unsigned char image_paint_0_bits[] U8X8_PROGMEM = {0x3c, 0x1c, 0x00, 0x66, 0x36, 0x00, 0x43, 0x63, 0x00, 0x03, 0x63, 0x02,
-                                                                  0x03, 0x63, 0x05, 0x43, 0x63, 0x04, 0x66, 0x36, 0x02, 0x3c, 0x1c, 0x07};
-  static const unsigned char image_Pin_star_bits[] U8X8_PROGMEM = {0x49, 0x2a, 0x1c, 0x7f, 0x1c, 0x2a, 0x49};
+  static const unsigned char image_fan_icon_bits[] U8X8_PROGMEM = {0xe0, 0x03, 0x98, 0x0c, 0x44, 0x11, 0x22, 0x22, 0x22, 0x22, 0x39,
+                                                                   0x4e, 0x45, 0x51, 0x83, 0x60, 0x45, 0x51, 0x39, 0x4e, 0x22, 0x22,
+                                                                   0x22, 0x22, 0x44, 0x11, 0x98, 0x0c, 0xe0, 0x03, 0x00, 0x00};
+  static const unsigned char image_wifi_on_bits[] U8X8_PROGMEM = {0xfe, 0x00, 0x01, 0x01, 0x7c, 0x00, 0x82, 0x00, 0x38, 0x00, 0x00, 0x00, 0x10, 0x00};
+  static const unsigned char image_wifi_off_bits[] U8X8_PROGMEM = {0xd6, 0x00, 0x11, 0x01, 0x54, 0x00, 0x92,
+                                                                   0x00, 0x10, 0x00, 0x00, 0x00, 0x10, 0x00};
 
   u8g2->setFontMode(1);
   u8g2->setBitmapMode(1);
-  u8g2->drawXBM(114, 0, 9, 7, ESPConnect.getState() == ESPConnectState::NETWORK_CONNECTED ? image_wifi_on_bits : image_wifi_off_bits);
-  u8g2->drawXBM(9, 17, 11, 16, image_temperature_bits);
-  u8g2->drawXBM(68, 17, 11, 16, image_weather_humidity_bits);
-  u8g2->setFont(u8g2_font_profont22_mf);
-  u8g2->drawStr(22, 32, temp_int.c_str());
-  u8g2->setFont(u8g2_font_profont10_mf);
-  u8g2->drawStr(44, 32, temp_dec.c_str());
-  u8g2->drawEllipse(50, 19, 1, 1);
-  u8g2->drawStr(54, 24, "C");
-  u8g2->setFont(u8g2_font_profont22_mf);
-  // u8g2->drawStr(82, 32, hum_int.c_str());
-  // u8g2->setFont(u8g2_font_profont10_mf);
-  // u8g2->drawStr(104, 32, hum_dec.c_str());
-  u8g2->setFont(u8g2_font_profont29_mf);
-  u8g2->drawStr(35, 59, String(co2, 0).c_str());
-  u8g2->drawXBM(109, 18, 9, 6, image_percent_bits);
-  u8g2->setFont(u8g2_font_6x10_mf);
-  u8g2->drawStr(14, 57, "ppm");
-  u8g2->drawLine(5, 13, 5, 63);
-  u8g2->drawXBM(13, 40, 19, 8, image_paint_0_bits);
-  u8g2->drawLine(122, 13, 122, 63);
-  u8g2->drawLine(121, 13, 6, 13);
-  u8g2->drawLine(121, 63, 6, 63);
-  u8g2->drawLine(121, 36, 6, 36);
-  u8g2->drawLine(121, 35, 6, 35);
-  u8g2->drawLine(121, 62, 6, 62);
-  u8g2->drawLine(4, 63, 4, 13);
-  u8g2->drawLine(123, 63, 123, 13);
-  u8g2->drawLine(123, 12, 4, 12);
-  u8g2->drawXBM(4, 0, 7, 7, image_Pin_star_bits);
-  u8g2->setFont(u8g2_font_4x6_mf);
-  u8g2->drawStr(15, 6, fans.get_speed(1));
+  u8g2->drawXBM(118, 1, 9, 7, ESPConnect.getState() == ESPConnectState::NETWORK_CONNECTED ? image_wifi_on_bits : image_wifi_off_bits);
+  u8g2->setFont(u8g2_font_profont29_tr);
+  // u8g2_int_t co2_x = ALIGN_CENTER(String(co2).c_str()) - 10;
+  u8g2_int_t co2_x = 10;
+  u8g2_int_t co2_right_end = co2_x + u8g2->getUTF8Width(String(co2).c_str()) + 5;
+  u8g2->drawStr(co2_x, 39, String(co2).c_str());
+  u8g2->setFont(u8g2_font_6x10_tr);
+  u8g2->drawStr(co2_right_end, 37, "ppm");
+  u8g2->drawXBM(co2_right_end, 21, 19, 8, image_paint_0_bits);
+  u8g2->setFont(u8g2_font_profont17_tr);
+  // u8g2->drawStr(ALIGN_CENTER(air_quality), 14, air_quality);
+  u8g2->drawStr(10, 14, air_quality);
+  u8g2->setDrawColor(2);
+  u8g2->drawBox(9, 2, u8g2->getUTF8Width(air_quality) + 2, 13);
+  u8g2->setDrawColor(1);
+  u8g2->drawXBM(9, 46, 11, 16, image_temperature_bits);
+  u8g2->setFont(u8g2_font_profont22_tr);
+  u8g2->drawStr(21, 61, temp_int.c_str());
+  u8g2->setFont(u8g2_font_profont10_tr);
+  u8g2->drawStr(43, 61, temp_dec.c_str());
+  u8g2->drawEllipse(49, 48, 1, 1);
+  u8g2->drawStr(53, 53, mhz19b.get_unit() == CELSIUS ? "C" : "F");
+  u8g2->setFont(u8g2_font_timR14_tr);
+  const char *fan_speed = fans.get_speed(1);
+  u8g2->drawStr(ALIGN_RIGHT(fan_speed) - 10, 60, fan_speed);
+  u8g2_int_t fan_speed_left_end = ALIGN_RIGHT(fan_speed) - 10 - 15 - 3;
+  // u8g2->drawXBM(66, 46, 15, 16, image_fan_icon_bits);
+  u8g2->drawXBM(fan_speed_left_end, 46, 15, 16, image_fan_icon_bits);
 }
 
 void OLED::display_splash_screen() {
   u8g2->setFontMode(1);
   u8g2->setBitmapMode(1);
   u8g2->setFont(u8g2_font_timR18_tf);
-  u8g2->drawStr(12, 46, "SmartVent");
+  u8g2->drawStr(ALIGN_CENTER("SmartVent"), 46, "SmartVent");
   u8g2->setFont(u8g2_font_helvB08_tf);
-  u8g2->drawStr(36, 22, "LaunchPilot");
-}
-
-void OLED::oled_ticker_callback() {
-  switch (current_screen) {
-    case SPLASH_SCREEN:
-      current_screen = MAIN_SCREEN;
-      break;
-    case MAIN_SCREEN:
-      break;
-  }
+  u8g2->drawStr(ALIGN_CENTER("LaunchPilot"), 22, "LaunchPilot");
 }
 
 void OLED::set_screen(Screen screen) {
@@ -142,6 +134,10 @@ bool OLED::toggle() {
 
 bool OLED::is_enabled() {
   return enabled;
+}
+
+void OLED::splash_screen_ticker_callback() {
+  if (current_screen == SPLASH_SCREEN) current_screen = MAIN_SCREEN;
 }
 
 /* helper functions */

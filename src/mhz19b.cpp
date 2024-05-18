@@ -42,6 +42,13 @@ void MHZ19B::update_data() {
   Serial.println("-------------------------------------------------");
 }
 
+const char* MHZ19B::get_air_quality() {
+  if (co2 < 1000) return "Good";
+  if (co2 <= 1400) return "Fair";
+  if (co2 > 1400) return "Unhealthy";
+  return "Unknown";
+}
+
 void MHZ19B::set_unit(TemperatureUnit unit) {
   this->unit = unit;
 }
@@ -55,6 +62,11 @@ int MHZ19B::get_co2() {
 }
 
 float MHZ19B::get_temperature() {
+  if (unit == FAHRENHEIT) return temperature * 1.8 + 32;
+  return temperature;
+}
+
+float MHZ19B::get_temperature(TemperatureUnit unit) {
   if (unit == FAHRENHEIT) return temperature * 1.8 + 32;
   return temperature;
 }

@@ -26,6 +26,8 @@ class MHZ19B {
   TemperatureUnit get_unit();
   int get_co2();
   float get_temperature();
+  float get_temperature(TemperatureUnit unit);
+  const char* get_air_quality();
 
  private:
   MHZ19 mhz19b;

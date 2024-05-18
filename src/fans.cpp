@@ -53,21 +53,21 @@ FanSpeed Fans::get_speed() {
 }
 
 const char *Fans::get_speed(bool is_short) {
-  if (override) return is_short ? "OFF" : "Force Off";
+  if (override) return is_short ? "Off" : "Forced Off";
 
   switch (current_speed) {
     case FAN_OFF:
-      return is_short ? "OFF" : "Off";
+      return is_short ? "Off" : "Off";
     case FAN_LOW:
-      return is_short ? "LOW" : "Low";
+      return is_short ? "Low" : "Low";
     case FAN_MEDIUM:
-      return is_short ? "MED" : "Medium";
+      return is_short ? "Med" : "Medium";
     case FAN_HIGH:
-      return is_short ? "HIGH" : "High";
+      return is_short ? "High" : "High";
     case FAN_MAX:
-      return is_short ? "MAX" : "Max";
+      return is_short ? "Max" : "Max";
     default:
-      return is_short ? "OFF" : "Off";
+      return is_short ? "Off" : "Off";
   }
 }
 

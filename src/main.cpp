@@ -27,6 +27,7 @@
 /* global variables */
 extern AsyncWebServer server;  // defined in dashboard.h
 WebServer webserver(&server);
+Dashboard dashboard;
 MHZ19B mhz19b;
 OLED oled;
 Fans fans;
@@ -37,13 +38,13 @@ void setup() {
   webserver.init();
   mhz19b.init();
   fans.init();
-  init_dashboard();
+  dashboard.init();
 }
 
 void loop() {
   oled.loop();
   webserver.loop();
   mhz19b.loop();
-  update_dashboard();
+  dashboard.loop();
   // update_buttons();
 }

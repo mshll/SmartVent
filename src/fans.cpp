@@ -22,15 +22,18 @@ void Fans::init() {
 }
 
 void Fans::update(int co2) {
-  if (override) set_speed(FAN_OFF);
-
-  if (co2 < FAN_THRESHOLD_OFF) {
+  if (override) {
     set_speed(FAN_OFF);
-  } else if (co2 < FAN_THRESHOLD_LOW) {
+    return;
+  }
+
+  if (co2 < CO2_THRESHOLD_1) {
+    set_speed(FAN_OFF);
+  } else if (co2 < CO2_THRESHOLD_2) {
     set_speed(FAN_LOW);
-  } else if (co2 < FAN_THRESHOLD_MEDIUM) {
+  } else if (co2 < CO2_THRESHOLD_3) {
     set_speed(FAN_MEDIUM);
-  } else if (co2 < FAN_THRESHOLD_HIGH) {
+  } else if (co2 < CO2_THRESHOLD_4) {
     set_speed(FAN_HIGH);
   } else {
     set_speed(FAN_MAX);
@@ -40,12 +43,7 @@ void Fans::update(int co2) {
 void Fans::set_speed(FanSpeed speed) {
   ledcWrite(0, speed);
   current_speed = speed;
-
-  if (speed == FAN_OFF) {
-    digitalWrite(RELAY_PIN, LOW);
-  } else {
-    digitalWrite(RELAY_PIN, HIGH);
-  }
+  digitalWrite(RELAY_PIN, speed == FAN_OFF ? LOW : HIGH);
 }
 
 FanSpeed Fans::get_speed() {

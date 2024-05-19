@@ -46,5 +46,6 @@ void loop() {
   webserver.loop();
   mhz19b.loop();
   dashboard.loop();
+  fans.update(mhz19b.get_co2());
   // update_buttons();
 }

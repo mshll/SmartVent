@@ -37,16 +37,15 @@ void MHZ19B::update_data() {
   if (co2 > 0) this->co2 = co2;
   if (temperature > 0.0) this->temperature = temperature;
 
-  Serial.println("-------------------- MH-Z19B --------------------");
-  Serial.println("CO2: " + String(co2) + " ppm // Temperature: " + String(temperature) + " °C");
-  Serial.println("-------------------------------------------------");
+  Serial.println("MH-Z19B ==> CO2: " + String(co2) + " ppm // Temp: " + String(temperature) + " °C");
 }
 
 const char* MHZ19B::get_air_quality() {
-  if (co2 < 1000) return "Good";
-  if (co2 <= 1400) return "Fair";
-  if (co2 > 1400) return "Unhealthy";
-  return "Unknown";
+  if (co2 < CO2_THRESHOLD_1) return AQ_THRESHOLD_1;
+  if (co2 < CO2_THRESHOLD_2) return AQ_THRESHOLD_2;
+  if (co2 < CO2_THRESHOLD_3) return AQ_THRESHOLD_3;
+  if (co2 < CO2_THRESHOLD_4) return AQ_THRESHOLD_4;
+  return AQ_THRESHOLD_5;
 }
 
 void MHZ19B::set_unit(TemperatureUnit unit) {

@@ -75,15 +75,8 @@ void Dashboard::loop() {
 }
 
 void Dashboard::update_air_quality_card(int co2) {
-  if (co2 < 1000) {
-    air_quality_card.update("Good", "success");
-  } else if (co2 <= 1400) {
-    air_quality_card.update("Fair", "warning");
-  } else if (co2 > 1400) {
-    air_quality_card.update("Unhealthy", "danger");
-  } else {
-    air_quality_card.update("Unknown", "idle");
-  }
+  const char *air_quality = mhz19b.get_air_quality();
+  air_quality_card.update(air_quality, air_quality_map.at(air_quality).c_str());
 }
 
 void Dashboard::set_callbacks() {

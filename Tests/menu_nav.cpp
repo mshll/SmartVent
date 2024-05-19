@@ -16,10 +16,10 @@
 
 
 /*** PINS FOR BUTTONS ***/
-#define LEFT_BUTTON_PIN  33   //A0
-#define RIGHT_BUTTON_PIN  14  //A3
-#define UP_BUTTON_PIN  15     //A1
-#define DOWN_BUTTON_PIN  32   //A2
+#define LEFT_BUTTON_PIN  A0   //33
+#define RIGHT_BUTTON_PIN  SCK  //14
+#define UP_BUTTON_PIN  A1     //15
+#define DOWN_BUTTON_PIN  A5   //32
 
 
 /*** PINS FOR OLED ***/
@@ -31,8 +31,6 @@
 #define OLED_HEIGHT u8g2.getDisplayHeight()     // 64   Pixels
 
 #define START_DELAY 3		// Time for Start Logo Delay (in seconds).
-#define IDLE_TIME 5         // Defualt Idle Countdown is 30 Seconds.            // TODO: Make this link to the settings and change it to it.
-
 Button2 left_button, right_button, up_button, down_button;         // Name for each button.
 
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* clock=*/ 22, /* data=*/ 23);   // ESP32 Thing, HW I2C with pin remapping
@@ -60,7 +58,6 @@ const int MAX_NUM_FAN_SPEED = 3;
 
 
 int idle_flag = 1; // 0=idle; 1=active_menu
-hw_timer_t *timer = NULL;
 
 /*** FUNCTIONS ***/
 void longClickDetected(Button2& btn) {
@@ -71,12 +68,6 @@ void longClickDetected(Button2& btn) {
 
 }
 void button_handler(Button2& btn) {
-    // Reset Timer Interrupt for idle.
-    // timerAlarmDisable(timer);
-    // timerAlarmWrite(timer, IDLE_TIME * 1000000, false); // Set alarm value to seconds, disable auto-reload
-    // timerAlarmEnable(timer);
-    
-
     // One button push out of Idle.
     if (idle_flag == 1) {
         Serial.println("Waking Up...\n");
@@ -494,13 +485,6 @@ void setup() {
 
     // Initialize Buttons
     init_buttons();
-    /* 
-    // Initialize Timer for idle counter.
-    timer = timerBegin(0, 80, true); // Initialize timer
-    timerAttachInterrupt(timer, &idle_on, true); // Attach interrupt
-    timerAlarmWrite(timer, IDLE_TIME * 1000000, false); // Set alarm value to seconds, disable auto-reload
-    timerAlarmEnable(timer); // Enable timer alarm 
-    */
 
     start_display();
 }
@@ -508,19 +492,16 @@ void setup() {
 
 /*** LOOP ***/
 void loop() {
-  // NAVIGATION SYSTEM
-  u8g2.firstPage();
-  do {
-    // Check for buttons pushes.
+    // NAVIGATION SYSTEM
+  
     button_loops();
-    
+
     // Clear Display
     u8g2.clearBuffer();
 
     // Set font
-    u8g2.setFont(u8g2_font_t0_16_tr);	// primary font
-    //u8g.setFont(u8g_font_10x20);  // secondary font
-    
+    u8g2.setFont(u8g2_font_t0_16_tr);
+
     // Checks for Idle Flag.
     if (idle_flag == 1){
         // Display Idle Display.
@@ -534,6 +515,7 @@ void loop() {
         }
         // Selected CO2 Level Options
         if (selectedMenuItem == 1){
+            // Set Selected Menu Item
             display_CO2_menu(selectedMenuItem-1);
         }
         // Selected Fan Speed Option
@@ -557,11 +539,11 @@ void loop() {
             itoa( menuItems[selectedMenuItem-1].values[0], intStrBuffer, 10);
             int centerX = (OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 4;
             int centerY = (OLED_HEIGHT - (u8g2.getFontAscent() - u8g2.getFontDescent())) / 2;
-            u8g2.drawStr(centerX, centerY, intStrBuffer);	// write something to the internal memory
+            u8g2.drawStr(centerX, centerY, intStrBuffer);
             // Minutes
             itoa( menuItems[selectedMenuItem-1].values[1], intStrBuffer, 10);
             int centerX2 = ((OLED_WIDTH - u8g2.getStrWidth(intStrBuffer)) / 4) + (OLED_WIDTH / 3);
-            u8g2.drawStr(centerX2, centerY, intStrBuffer);	// write something to the internal memory
+            u8g2.drawStr(centerX2, centerY, intStrBuffer);
             // AM or PM
             if (menuItems[selectedMenuItem-1].values[2] == 0) {
                 u8g2.drawStr(centerX + (OLED_WIDTH / 2), centerY, "AM");
@@ -571,10 +553,6 @@ void loop() {
             }
         }
     }
-    
-    // TODO: Put code to update to Dashboard. ** In this location it MUST have no delays.
-
     // Update Display
     u8g2.sendBuffer();
-  } while (u8g2.nextPage());  
 }

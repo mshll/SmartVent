@@ -17,6 +17,7 @@
  *
  */
 
+#include "buttons.h"
 #include "common.h"
 #include "dashboard.h"
 #include "fans.h"
@@ -25,12 +26,15 @@
 #include "webserver.h"
 
 /* global variables */
-extern AsyncWebServer server;  // defined in dashboard.h
+extern AsyncWebServer server;  // defined in dashboard.cpp
 WebServer webserver(&server);
 Dashboard dashboard;
 MHZ19B mhz19b;
 OLED oled;
 Fans fans;
+Buttons buttons;
+
+void core1_task(void* parameter);
 
 void setup() {
   Serial.begin(9600);
@@ -39,6 +43,8 @@ void setup() {
   mhz19b.init();
   fans.init();
   dashboard.init();
+  buttons.init();
+  xTaskCreatePinnedToCore(core1_task, "core1_task", 10000, NULL, 1, NULL, 1);
 }
 
 void loop() {
@@ -47,5 +53,12 @@ void loop() {
   mhz19b.loop();
   dashboard.loop();
   fans.update(mhz19b.get_co2());
-  // update_buttons();
+}
+
+void core1_task(void* parameter) {
+  for (;;) {
+    // Run buttons task on core 1 to avoid conflicts with other tasks
+    buttons.loop();
+    vTaskDelay(10);
+  }
 }

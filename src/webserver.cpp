@@ -4,18 +4,19 @@
  */
 
 #include "webserver.h"
-#include <ESPDash.h>
+#include "common.h"
 #include "wifiFix.h"
+
+#define HEARTBEAT_INTERVAL 5000      /*ms*/
+#define CHECK_DEVICES_INTERVAL 16000 /*ms*/
 
 WiFiClient* wifi = new WiFiClientFixed();
 
 /**
  * @brief Constructor for the WebServer class.
  * @param server The AsyncWebServer object.
- * @param heartbeat_ticker The TickTwo object for the heartbeat ticker.
- * @param check_devices_ticker The TickTwo object for the check devices ticker.
  */
-WebServer::WebServer(AsyncWebServer* server, TickTwo* heartbeat_ticker, TickTwo* check_devices_ticker) {
+WebServer::WebServer(AsyncWebServer* server) {
   _server = server;
   is_connected = false;
   device_id = String((uint32_t)ESP.getEfuseMac(), HEX);
@@ -28,8 +29,16 @@ WebServer::WebServer(AsyncWebServer* server, TickTwo* heartbeat_ticker, TickTwo*
   heartbeat_timeout = 15000;
   last_log = 0;
 
-  this->heartbeat_ticker = heartbeat_ticker;
-  this->check_devices_ticker = check_devices_ticker;
+  heartbeat_ticker = new TickTwo(std::bind(&WebServer::send_heartbeat, this), HEARTBEAT_INTERVAL);
+  check_devices_ticker = new TickTwo(std::bind(&WebServer::check_devices, this), CHECK_DEVICES_INTERVAL);
+}
+
+/**
+ * @brief Destructor for the WebServer class.
+ */
+WebServer::~WebServer() {
+  delete heartbeat_ticker;
+  delete check_devices_ticker;
 }
 
 void WebServer::init() {
@@ -308,7 +317,6 @@ const String WebServer::serialize_devices() {
     }
   }
   json += "]";
-  // Serial.println("Devices JSON: \n" + json);
   return json;
 }
 

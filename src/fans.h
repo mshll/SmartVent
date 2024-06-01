@@ -25,9 +25,13 @@ class Fans {
   void set_override(bool override);
   bool toggle_override();
   bool get_override();
+  FanSpeed override_speed;
 
  private:
   FanSpeed current_speed;
   bool override;
   void set_speed(FanSpeed speed);
 };
+
+FanSpeed get_speed_from_index(int index);
+int get_index_from_speed(FanSpeed speed);

@@ -9,7 +9,7 @@
 #include "oled.h"
 #include "webserver.h"
 
-// #define DEBUG
+#define DEBUG
 
 #define DASH_REFRESH_INTERVAL 2000
 #define LOG_SIZE 144
@@ -24,27 +24,27 @@
 #endif
 
 AsyncWebServer server(80);
+ESPDash espdash(&server, true, "/dash");
 extern WebServer webserver;
 extern MHZ19B mhz19b;
 extern OLED oled;
 extern Fans fans;
-ESPDash espdash(&server, true, "/dash");
 
-Card temperature_card(&espdash, TEMPERATURE_CARD, "Temperature", "°C");
-Card temperature_unit_btn(&espdash, BUTTON_CARD, "Toggle Temperature Unit", "Settings / Temperature (°C / °F)");
-Card co2_card(&espdash, AIR_CARD, "CO2", "ppm");
 Card air_quality_card(&espdash, STATUS_CARD, "Air Quality", "idle");
-Card reset_wifi_btn(&espdash, PUSH_BUTTON_CARD, "Reset Wi-Fi Configuration", "Settings / Wi-Fi");
-Card enable_oled_btn(&espdash, BUTTON_CARD, "Enable Physical Display", "Settings / Display");
-Card fan_speed_card(&espdash, GENERIC_CARD, "Fans Status", "");
-Card fans_override_btn(&espdash, BUTTON_CARD, "Force Fans Off", "Settings / Fans");
+Card co2_card(&espdash, AIR_CARD, "CO2", "ppm");
+Card temperature_card(&espdash, TEMPERATURE_CARD, "Temperature", "°C");
+Card fan_speed_card(&espdash, GENERIC_CARD, "Fans Speed", "");
+Card fans_override_btn(&espdash, BUTTON_CARD, "Override Fans", "Settings / Fans");
+Card fans_override_slider(&espdash, SLIDER_CARD, "Fan Override Speed", "", 0, 4);
+Card temperature_unit_btn(&espdash, BUTTON_CARD, "Toggle Temperature Unit", "Settings / Temperature (°C/°F)");
+Card reset_wifi_btn(&espdash, PUSH_BUTTON_CARD, "Reset Wi-Fi Setup", "Settings / Wi-Fi");
+Card enable_oled_btn(&espdash, BUTTON_CARD, "Enable Display", "Settings / Physical Display");
 Chart co2_chart(&espdash, BAR_CHART, "CO2 History");
 Chart temperature_chart(&espdash, BAR_CHART, "Temperature History");
 
 Dashboard::Dashboard() {
-  // dashboard = new ESPDash(&server, enable_stats, path);
   last_log = 0;
-  dashboard_ticker = new TickTwo(std::bind(&Dashboard::dashboard_ticker_handler, this), DASH_REFRESH_INTERVAL, 0, MILLIS);
+  dashboard_ticker = new TickTwo(std::bind(&Dashboard::dashboard_ticker_handler, this), DASH_REFRESH_INTERVAL);
   data_log_ticker = new TickTwo(std::bind(&Dashboard::log_data, this), LOG_INTERVAL);
 }
 
@@ -60,18 +60,16 @@ void Dashboard::loop() {
   reset_wifi_btn.update(true);
   enable_oled_btn.update(oled.is_enabled());
   fans_override_btn.update(fans.get_override());
+  fans_override_slider.update(get_index_from_speed(fans.override_speed));
   temperature_unit_btn.update(mhz19b.get_unit() == FAHRENHEIT);
 
-  if (millis() - last_log > 5000) {
-    // JsonDocument doc;
-    // ESPConnect.toJson(doc.to<JsonObject>());
-    // serializeJson(doc, Serial);
-    // Serial.println();
-
-    // mhz19b.set_unit(mhz19b.get_unit() == CELSIUS ? FAHRENHEIT : CELSIUS);
-
-    last_log = millis();
-  }
+  // if (millis() - last_log > 5000) {
+  //   JsonDocument doc;
+  //   ESPConnect.toJson(doc.to<JsonObject>());
+  //   serializeJson(doc, Serial);
+  //   Serial.println();
+  //   last_log = millis();
+  // }
 }
 
 void Dashboard::update_air_quality_card(int co2) {
@@ -88,7 +86,6 @@ void Dashboard::set_callbacks() {
 
   enable_oled_btn.attachCallback([&](bool value) {
     enable_oled_btn.update(value);
-    Serial.println("Toggling OELD!\n");
     oled.toggle();
     espdash.sendUpdates();
   });
@@ -96,6 +93,13 @@ void Dashboard::set_callbacks() {
   fans_override_btn.attachCallback([&](bool value) {
     fans_override_btn.update(value);
     fans.toggle_override();
+    dashboard_ticker_handler();
+    espdash.sendUpdates();
+  });
+
+  fans_override_slider.attachCallback([&](int value) {
+    fans_override_slider.update(value);
+    fans.override_speed = get_speed_from_index(value);
     dashboard_ticker_handler();
     espdash.sendUpdates();
   });

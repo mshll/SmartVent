@@ -8,6 +8,7 @@
 
 Fans::Fans() {
   current_speed = FAN_OFF;
+  override_speed = FAN_OFF;
   override = false;
 }
 
@@ -23,7 +24,7 @@ void Fans::init() {
 
 void Fans::update(int co2) {
   if (override) {
-    set_speed(FAN_OFF);
+    set_speed(override_speed);
     return;
   }
 
@@ -41,8 +42,8 @@ void Fans::update(int co2) {
 }
 
 void Fans::set_speed(FanSpeed speed) {
-  ledcWrite(0, speed);
   current_speed = speed;
+  ledcWrite(0, speed == FAN_OFF ? FAN_MEDIUM : speed);
   digitalWrite(RELAY_PIN, speed == FAN_OFF ? LOW : HIGH);
 }
 
@@ -51,8 +52,6 @@ FanSpeed Fans::get_speed() {
 }
 
 const char *Fans::get_speed(bool is_short) {
-  if (override) return is_short ? "Off" : "Forced Off";
-
   switch (current_speed) {
     case FAN_OFF:
       return is_short ? "Off" : "Off";
@@ -80,4 +79,38 @@ bool Fans::toggle_override() {
 
 bool Fans::get_override() {
   return override;
+}
+
+FanSpeed get_speed_from_index(int index) {
+  switch (index) {
+    case 0:
+      return FAN_OFF;
+    case 1:
+      return FAN_LOW;
+    case 2:
+      return FAN_MEDIUM;
+    case 3:
+      return FAN_HIGH;
+    case 4:
+      return FAN_MAX;
+    default:
+      return FAN_OFF;
+  }
+}
+
+int get_index_from_speed(FanSpeed speed) {
+  switch (speed) {
+    case FAN_OFF:
+      return 0;
+    case FAN_LOW:
+      return 1;
+    case FAN_MEDIUM:
+      return 2;
+    case FAN_HIGH:
+      return 3;
+    case FAN_MAX:
+      return 4;
+    default:
+      return 0;
+  }
 }

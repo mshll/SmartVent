@@ -24,7 +24,7 @@ OLED::OLED() {
   u8g2 = new U8G2_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0, U8X8_PIN_NONE, OLED_SCL, OLED_SDA);
   current_screen = SPLASH_SCREEN;
   enabled = true;
-  main_screen_idle_ticker = new TickTwo(std::bind(&OLED::screen_idle_ticker_callback, this), 3000, 1);
+  main_screen_idle_ticker = new TickTwo(std::bind(&OLED::screen_idle_ticker_callback, this), SPLASH_SCREEN_DUR, 1);
 }
 
 void OLED::init() {
@@ -105,23 +105,20 @@ void OLED::display_menu_screen() {
   // selected item background
   u8g2->drawXBMP(0, 22, 128, 21, bitmap_item_sel_outline);
 
-  int prev_menu_item = curr_menu_item == 0 ? menu_items_count - 1 : curr_menu_item - 1;
-  int next_menu_item = curr_menu_item == menu_items_count - 1 ? 0 : curr_menu_item + 1;
+  int prev_menu_item = decrement(curr_menu_item, menu_items_count);
+  int next_menu_item = increment(curr_menu_item, menu_items_count);
 
   // draw previous item as icon + label
   u8g2->setFont(u8g_font_7x14);
-  u8g2->drawStr(25, 15, menu_items[prev_menu_item]);
-  // u8g2->drawXBMP(4, 2, 16, 16, bitmap_icons[prev_menu_item]);
+  u8g2->drawStr(5, 15, menu_items[prev_menu_item]);
 
   // draw selected item as icon + label in bold font
   u8g2->setFont(u8g_font_7x14B);
-  u8g2->drawStr(25, 15 + 20 + 2, menu_items[curr_menu_item]);
-  // u8g2->drawXBMP(4, 24, 16, 16, bitmap_icons[curr_menu_item]);
+  u8g2->drawStr(5, 15 + 20 + 2, menu_items[curr_menu_item]);
 
   // draw next item as icon + label
   u8g2->setFont(u8g_font_7x14);
-  u8g2->drawStr(25, 15 + 20 + 20 + 2 + 2, menu_items[next_menu_item]);
-  // u8g2->drawXBMP(4, 46, 16, 16, bitmap_icons[next_menu_item]);
+  u8g2->drawStr(5, 15 + 20 + 20 + 2 + 2, menu_items[next_menu_item]);
 
   // draw scrollbar background
   u8g2->drawXBMP(128 - 8, 0, 8, 64, bitmap_scrollbar_background);

@@ -8,15 +8,24 @@
 #include <TickTwo.h>
 #include <U8g2lib.h>
 #include "buttons.h"
+#include "mhz19b.h"
 
 #define MENU_ITEM_LENGTH 20
-#define MENU_ITEMS_COUNT 3
+#define MENU_ITEMS_COUNT 4
 
 typedef enum {
-  SPLASH_SCREEN = 0,
-  MAIN_SCREEN = 1,
-  MENU_SCREEN = 2,
+  SPLASH_SCREEN,
+  MAIN_SCREEN,
+  MENU_SCREEN,
+  MENU_ITEM_SCREEN,  // todo
 } Screen;
+
+typedef enum {
+  TOGGLE_TEMP_UNIT,
+  FANS_OVERRIDE,
+  VIEW_WIFI_INFO,
+  RESET_WIFI,
+} MenuItem;
 
 class OLED {
   friend class Buttons;
@@ -35,14 +44,16 @@ class OLED {
  private:
   U8G2_SSD1306_128X64_NONAME_F_HW_I2C *u8g2;
   Screen current_screen;
+  MenuItem current_menu_item;
   bool enabled;
   TickTwo *main_screen_idle_ticker;
   int curr_menu_item;
   const int menu_items_count = MENU_ITEMS_COUNT;
   const char menu_items[MENU_ITEMS_COUNT][MENU_ITEM_LENGTH] = {
-      {"Temperature"},
-      {"Fans Control"},
-      {"Wi-Fi"},
+      {"Toggle Temp Unit"},
+      {"Fans Override"},
+      {"View Wi-Fi Info"},
+      {"Reset Wi-Fi"},
   };
 
   void screen_idle_ticker_callback();

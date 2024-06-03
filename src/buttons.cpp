@@ -11,6 +11,7 @@ void button_up_handler_wrapper(Button2 &btn);
 void button_down_handler_wrapper(Button2 &btn);
 void button_left_handler_wrapper(Button2 &btn);
 void button_right_handler_wrapper(Button2 &btn);
+void button_left_long_press_handler_wrapper(Button2 &btn);
 
 extern OLED oled;
 
@@ -29,6 +30,9 @@ void Buttons::init() {
   button_left.setReleasedHandler(button_left_handler_wrapper);
   button_right.setReleasedHandler(button_right_handler_wrapper);
 
+  button_left.setLongClickTime(3000);
+  button_left.setLongClickDetectedHandler(button_left_long_press_handler_wrapper);
+
   button_ticker->start();
 }
 
@@ -44,7 +48,7 @@ void Buttons::button_up_handler(Button2 &btn) {
   Serial.println("Button up pressed");
   oled.main_screen_idle_ticker->start();
   if (oled.current_screen == MENU_SCREEN) {
-    oled.curr_menu_item = (oled.curr_menu_item + oled.menu_items_count - 1) % oled.menu_items_count;
+    oled.curr_menu_item = decrement(oled.curr_menu_item, oled.menu_items_count);
   }
 }
 
@@ -52,7 +56,7 @@ void Buttons::button_down_handler(Button2 &btn) {
   Serial.println("Button down pressed");
   oled.main_screen_idle_ticker->start();
   if (oled.current_screen == MENU_SCREEN) {
-    oled.curr_menu_item = (oled.curr_menu_item + 1) % oled.menu_items_count;
+    oled.curr_menu_item = increment(oled.curr_menu_item, oled.menu_items_count);
   }
 }
 
@@ -61,6 +65,8 @@ void Buttons::button_left_handler(Button2 &btn) {
   oled.main_screen_idle_ticker->start();
   if (oled.current_screen == MENU_SCREEN) {
     oled.current_screen = MAIN_SCREEN;
+  } else if (oled.current_screen == MENU_ITEM_SCREEN) {
+    oled.current_screen = MENU_SCREEN;
   }
 }
 
@@ -69,6 +75,15 @@ void Buttons::button_right_handler(Button2 &btn) {
   oled.main_screen_idle_ticker->start();
   if (oled.current_screen == MAIN_SCREEN) {
     oled.current_screen = MENU_SCREEN;
+  } else if (oled.current_screen == MENU_SCREEN) {
+    oled.current_screen = MENU_ITEM_SCREEN;
+  }
+}
+
+void Buttons::button_left_long_press_handler(Button2 &btn) {
+  Serial.println("Button left long press");
+  if (oled.current_screen == MAIN_SCREEN) {
+    oled.toggle();
   }
 }
 
@@ -76,7 +91,7 @@ void Buttons::button_ticker_handler() {
   // Serial.println("Button ticker");
 }
 
-// BUTTONS OBJECT (defined in main.cpp) //
+/* BUTTONS OBJECT (defined in main.cpp) & WRAPPERS FOR BUTTON HANDLERS */
 extern Buttons buttons;
 
 void button_up_handler_wrapper(Button2 &btn) {
@@ -93,4 +108,8 @@ void button_left_handler_wrapper(Button2 &btn) {
 
 void button_right_handler_wrapper(Button2 &btn) {
   buttons.button_right_handler(btn);
+}
+
+void button_left_long_press_handler_wrapper(Button2 &btn) {
+  buttons.button_left_long_press_handler(btn);
 }

@@ -62,3 +62,17 @@ void core1_task(void* parameter) {
     vTaskDelay(10);
   }
 }
+
+/**
+ * @brief Decrement a value with wrap-around.
+ */
+int decrement(int val, int size) {
+  return (val + size - 1) % size;
+}
+
+/**
+ * @brief Increment a value with wrap-around.
+ */
+int increment(int val, int size) {
+  return (val + 1) % size;
+}

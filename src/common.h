@@ -48,5 +48,26 @@
 #define AQ_THRESHOLD_4 "Unhealthy"
 #define AQ_THRESHOLD_5 "Hazardous"
 
+#define SPLASH_SCREEN_DUR 3000
+
 const std::map<std::string, std::string> air_quality_map = {
     {AQ_THRESHOLD_1, "success"}, {AQ_THRESHOLD_2, "warning"}, {AQ_THRESHOLD_3, "warning"}, {AQ_THRESHOLD_4, "danger"}, {AQ_THRESHOLD_5, "danger"}};
+
+/* helper functions prototypes */
+/**
+ * @brief Decrement a value with wrap-around
+ *
+ * @param val   Value to decrement
+ * @param size  Maximum value
+ * @return int  Decremented value
+ */
+int decrement(int val, int size);
+
+/**
+ * @brief Increment a value with wrap-around
+ *
+ * @param val   Value to increment
+ * @param size  Maximum value
+ * @return int  Incremented value
+ */
+int increment(int val, int size);

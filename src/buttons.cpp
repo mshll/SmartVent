@@ -16,7 +16,7 @@ void button_left_long_press_handler_wrapper(Button2 &btn);
 extern OLED oled;
 
 Buttons::Buttons() {
-  button_ticker = new TickTwo(std::bind(&Buttons::button_ticker_handler, this), 1000);
+  button_ticker = new TickTwo(std::bind(&Buttons::button_ticker_handler, this), 100);
 }
 
 void Buttons::init() {
@@ -50,6 +50,7 @@ void Buttons::button_up_handler(Button2 &btn) {
   if (oled.current_screen == MENU_SCREEN) {
     oled.curr_menu_item = decrement(oled.curr_menu_item, oled.menu_items_count);
   }
+
 }
 
 void Buttons::button_down_handler(Button2 &btn) {
@@ -58,6 +59,7 @@ void Buttons::button_down_handler(Button2 &btn) {
   if (oled.current_screen == MENU_SCREEN) {
     oled.curr_menu_item = increment(oled.curr_menu_item, oled.menu_items_count);
   }
+
 }
 
 void Buttons::button_left_handler(Button2 &btn) {
@@ -67,7 +69,7 @@ void Buttons::button_left_handler(Button2 &btn) {
     oled.current_screen = MAIN_SCREEN;
   } else if (oled.current_screen == MENU_ITEM_SCREEN) {
     oled.current_screen = MENU_SCREEN;
-  }
+  } 
 }
 
 void Buttons::button_right_handler(Button2 &btn) {

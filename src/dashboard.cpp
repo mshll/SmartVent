@@ -8,6 +8,7 @@
 #include "fans.h"
 #include "oled.h"
 #include "webserver.h"
+#include "dashboard.h"
 
 #define DEBUG
 

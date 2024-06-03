@@ -48,7 +48,6 @@ void setup() {
 }
 
 void loop() {
-  oled.loop();
   webserver.loop();
   mhz19b.loop();
   dashboard.loop();
@@ -58,6 +57,7 @@ void loop() {
 void core1_task(void* parameter) {
   for (;;) {
     // Run buttons task on core 1 to avoid conflicts with other tasks
+    oled.loop();
     buttons.loop();
     vTaskDelay(10);
   }

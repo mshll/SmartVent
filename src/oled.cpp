@@ -49,6 +49,8 @@ void OLED::loop() {
       case MENU_SCREEN:
         display_menu_screen();
         break;
+      case MENU_ITEM_SCREEN:
+        display_menu_item_screen();
     }
   }
 
@@ -101,6 +103,7 @@ void OLED::display_main_screen() {
   u8g2->drawXBM(fan_speed_left_end, 46, 15, 16, image_fan_icon_bits);
 }
 
+
 void OLED::display_menu_screen() {
   // selected item background
   u8g2->drawXBMP(0, 22, 128, 21, bitmap_item_sel_outline);
@@ -125,6 +128,21 @@ void OLED::display_menu_screen() {
 
   // draw scrollbar handle
   u8g2->drawBox(125, 64 / menu_items_count * curr_menu_item, 3, 64 / menu_items_count);
+}
+
+void OLED::display_menu_item_screen() {
+  // draw selected menu
+  u8g2->drawFrame(1, 1, 127, 18);
+  // draw selected item as icon + label in bold font
+  u8g2->setFont(u8g_font_7x14B);
+  u8g2->drawStr(ALIGN_CENTER(menu_items[curr_menu_item]), 15, menu_items[curr_menu_item]);
+
+  // toggle temp unit display
+  if (curr_menu_item == 0) {
+    u8g2->drawStr(ALIGN_CENTER(mhz19b.get_unit() == CELSIUS ? "Celcius" : "Farenheit"), 38, mhz19b.get_unit() == CELSIUS ? "Celcius" : "Farenheit");
+    u8g2->drawStr(ALIGN_CENTER(mhz19b.get_unit() == CELSIUS ? "Farenheit" : "Celcius"), 53, mhz19b.get_unit() == CELSIUS ? "Farenheit" : "Celcius");
+  } 
+
 }
 
 void OLED::display_splash_screen() {

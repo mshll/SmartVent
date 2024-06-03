@@ -58,6 +58,7 @@ class OLED {
 
   void screen_idle_ticker_callback();
   void display_menu_screen();
+  void display_menu_item_screen();
 };
 
 //* Bitmaps

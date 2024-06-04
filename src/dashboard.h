@@ -6,7 +6,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include <ESPDASH.h>
+#include <ESPDash.h>
 #include <TickTwo.h>
 
 typedef struct {

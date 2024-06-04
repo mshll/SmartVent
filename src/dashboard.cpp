@@ -4,7 +4,7 @@
  */
 
 #include "common.h"
-#include "espdash.h"
+#include "ESPDash.h"
 #include "fans.h"
 #include "oled.h"
 #include "webserver.h"

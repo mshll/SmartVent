@@ -220,7 +220,9 @@ void OLED::display_menu_item_screen() {
     // TODO: Display wifi stuff.
   } 
   if (curr_menu_item == 3) {
-    // TODO: Disconnect from Wifi.
+    u8g2->drawStr(ALIGN_CENTER("Do you"), 32, "Do you");
+    u8g2->drawStr(ALIGN_CENTER("want to"), 46, "want to");
+    u8g2->drawStr(ALIGN_CENTER("RESET WIFI?"), 60, "RESET WIFI?");
   } 
 
 

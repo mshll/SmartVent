@@ -7,6 +7,7 @@
 #include "common.h"
 #include "oled.h"
 #include "fans.h"
+#include "webserver.h"
 
 void button_up_handler_wrapper(Button2 &btn);
 void button_down_handler_wrapper(Button2 &btn);
@@ -18,6 +19,7 @@ int buf = 0;
 extern OLED oled;
 extern MHZ19B mhz19b;
 extern Fans fans;
+extern WebServer webserver;
 
 Buttons::Buttons() {
   button_ticker = new TickTwo(std::bind(&Buttons::button_ticker_handler, this), 1000);
@@ -95,11 +97,9 @@ void Buttons::button_left_handler(Button2 &btn) {
   oled.main_screen_idle_ticker->start();
   if (oled.current_screen == MENU_SCREEN) {
     oled.current_screen = MAIN_SCREEN;
-  } else if (oled.current_screen == MENU_ITEM_SCREEN) {
-    oled.current_screen = MENU_SCREEN;
   } 
   // Discard Changed to Items
-  else if (oled.current_screen == MENU_ITEM_SCREEN) {
+  if (oled.current_screen == MENU_ITEM_SCREEN) {
     // Termperature Unit
     if (oled.curr_menu_item == 0) {
       Serial.printf("Discarding Changes.\n");
@@ -109,6 +109,11 @@ void Buttons::button_left_handler(Button2 &btn) {
     if (oled.curr_menu_item == 1) {
       fans.set_override(0);
       oled.current_screen = MENU_SCREEN;
+    }
+    // DO NOT Reset Wifi
+    if (oled.curr_menu_item == 3) {
+      Serial.printf("Wifi reset Aborted!\n");
+      oled.current_screen = MAIN_SCREEN;
     }
   } 
 }
@@ -130,6 +135,11 @@ void Buttons::button_right_handler(Button2 &btn) {
       fans.set_override(1);
       buf = 0;
     }
+    // Select Wifi Reset Option 
+    if (oled.curr_menu_item == 3) {
+      // Nothing to put here other than serial print.
+      Serial.printf("Reset Wifi?\n");
+    }
   }
   // Saving Changed Items
   else if (oled.current_screen == MENU_ITEM_SCREEN) {
@@ -146,7 +156,12 @@ void Buttons::button_right_handler(Button2 &btn) {
       fans.override_speed = fans.get_speed_from_index(buf);
       oled.current_screen = MAIN_SCREEN;
     }
-
+    // Reset Wifi
+    if (oled.curr_menu_item == 3) {
+      webserver.reset_wifi();
+      Serial.printf("Wifi has been reset\n");
+      oled.current_screen = MAIN_SCREEN;
+    }
   } 
 }
 

@@ -18,7 +18,7 @@ extern OLED oled;
 extern MHZ19B mhz19b;
 
 Buttons::Buttons() {
-  button_ticker = new TickTwo(std::bind(&Buttons::button_ticker_handler, this), 100);
+  button_ticker = new TickTwo(std::bind(&Buttons::button_ticker_handler, this), 1000);
 }
 
 void Buttons::init() {
@@ -113,15 +113,8 @@ void Buttons::button_right_handler(Button2 &btn) {
   else if (oled.current_screen == MENU_ITEM_SCREEN) {
     // Termperature Unit
     if (oled.curr_menu_item == 0) {
-      //mhz19b.set_unit((buf % 2) == 1 ? FAHRENHEIT : CELSIUS);
-      if ((buf)%2 == 1) {
-        mhz19b.set_unit(FAHRENHEIT);
-        Serial.printf("Setting to: %d\n", buf%2);
-      }
-      else {
-        mhz19b.set_unit(CELSIUS);
-        Serial.printf("Setting to: %d\n", buf%2);
-      }
+      mhz19b.set_unit((buf % 2) == 1 ? FAHRENHEIT : CELSIUS);
+      Serial.printf("Setting Temperature Unit to %s.\n", ((buf % 2) == 1 ? "Fahrenheit" : "Celsius"));
       oled.current_screen = MENU_SCREEN;
     }
   } 

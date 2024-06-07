@@ -20,6 +20,7 @@ class Buttons {
   void button_left_handler(Button2 &btn);
   void button_right_handler(Button2 &btn);
   void button_left_long_press_handler(Button2 &btn);
+  int buf;
 
  private:
   Button2 button_up;

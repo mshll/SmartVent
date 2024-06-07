@@ -7,6 +7,7 @@
 #include "common.h"
 #include "fans.h"
 #include "mhz19b.h"
+#include "buttons.h"
 
 #define SCREEN_IDLE_TIMEOUT 30000
 #define LCDWidth u8g2->getDisplayWidth()
@@ -16,6 +17,7 @@
 
 extern MHZ19B mhz19b;
 extern Fans fans;
+extern Buttons buttons;
 
 /* helper functions prototypes */
 void split_float(float number, String &int_part, String &dec_part);
@@ -131,17 +133,40 @@ void OLED::display_menu_screen() {
 }
 
 void OLED::display_menu_item_screen() {
-  // draw selected menu
+  // draw selected menu item top frame
   u8g2->drawFrame(1, 1, 127, 18);
-  // draw selected item as icon + label in bold font
+  // draw selected menu item as header
   u8g2->setFont(u8g_font_7x14B);
   u8g2->drawStr(ALIGN_CENTER(menu_items[curr_menu_item]), 15, menu_items[curr_menu_item]);
 
+  u8g2->setFont(u8g_font_7x14);
   // toggle temp unit display
   if (curr_menu_item == 0) {
-    u8g2->drawStr(ALIGN_CENTER(mhz19b.get_unit() == CELSIUS ? "Celcius" : "Farenheit"), 38, mhz19b.get_unit() == CELSIUS ? "Celcius" : "Farenheit");
-    u8g2->drawStr(ALIGN_CENTER(mhz19b.get_unit() == CELSIUS ? "Farenheit" : "Celcius"), 53, mhz19b.get_unit() == CELSIUS ? "Farenheit" : "Celcius");
+    if ((buttons.buf % 2) == 1) {
+      u8g2->drawStr(ALIGN_CENTER("Celcius"), 38, "Celcius");
+      u8g2->setFont(u8g_font_7x14B);
+      u8g2->drawStr(ALIGN_CENTER("Farenheit"), 53, "Farenheit");
+      u8g2->drawFrame(18, 39, 92, 18);
+    }
+    else {
+      u8g2->drawStr(ALIGN_CENTER("Farenheit"), 53, "Farenheit");
+      u8g2->setFont(u8g_font_7x14B);
+      u8g2->drawStr(ALIGN_CENTER("Celcius"), 38, "Celcius");
+      u8g2->drawFrame(18, 24, 92, 18);
+    }
   } 
+  if (curr_menu_item == 1) {
+    // Toggle Fans Override
+    //fans.toggle_override();
+    // TODO: fans.get_speed()
+  } 
+  if (curr_menu_item == 2) {
+    // TODO: Display wifi stuff.
+  } 
+  if (curr_menu_item == 3) {
+    // TODO: Disconnect from Wifi.
+  } 
+
 
 }
 

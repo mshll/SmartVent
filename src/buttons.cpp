@@ -12,8 +12,10 @@ void button_down_handler_wrapper(Button2 &btn);
 void button_left_handler_wrapper(Button2 &btn);
 void button_right_handler_wrapper(Button2 &btn);
 void button_left_long_press_handler_wrapper(Button2 &btn);
+int buf = 0;
 
 extern OLED oled;
+extern MHZ19B mhz19b;
 
 Buttons::Buttons() {
   button_ticker = new TickTwo(std::bind(&Buttons::button_ticker_handler, this), 100);
@@ -49,7 +51,15 @@ void Buttons::button_up_handler(Button2 &btn) {
   oled.main_screen_idle_ticker->start();
   if (oled.current_screen == MENU_SCREEN) {
     oled.curr_menu_item = decrement(oled.curr_menu_item, oled.menu_items_count);
-  }
+  } 
+  // Selected Menu Item
+  else if (oled.current_screen == MENU_ITEM_SCREEN) {
+    // Termperature Unit
+    if (oled.curr_menu_item == 0) {
+      buf += 1;
+      Serial.printf("%d\n", buf);
+    }
+  } 
 
 }
 
@@ -58,7 +68,15 @@ void Buttons::button_down_handler(Button2 &btn) {
   oled.main_screen_idle_ticker->start();
   if (oled.current_screen == MENU_SCREEN) {
     oled.curr_menu_item = increment(oled.curr_menu_item, oled.menu_items_count);
-  }
+  } 
+  // Selected Menu Item
+  else if (oled.current_screen == MENU_ITEM_SCREEN) {
+    // Termperature Unit
+    if (oled.curr_menu_item == 0) {
+      buf += 1;
+      Serial.printf("%d\n", buf);
+    }
+  } 
 
 }
 
@@ -70,6 +88,14 @@ void Buttons::button_left_handler(Button2 &btn) {
   } else if (oled.current_screen == MENU_ITEM_SCREEN) {
     oled.current_screen = MENU_SCREEN;
   } 
+  // Discard Changed Items
+  else if (oled.current_screen == MENU_ITEM_SCREEN) {
+    // Termperature Unit
+    if (oled.curr_menu_item == 0) {
+      Serial.printf("Discarding Changes.\n");
+      oled.current_screen = MENU_SCREEN;
+    }
+  } 
 }
 
 void Buttons::button_right_handler(Button2 &btn) {
@@ -79,7 +105,26 @@ void Buttons::button_right_handler(Button2 &btn) {
     oled.current_screen = MENU_SCREEN;
   } else if (oled.current_screen == MENU_SCREEN) {
     oled.current_screen = MENU_ITEM_SCREEN;
+    if (oled.curr_menu_item == 0) {
+      mhz19b.get_unit() == CELSIUS ? (buf = 0) : (buf = 1);
+    }
   }
+  // Saving Changed Items
+  else if (oled.current_screen == MENU_ITEM_SCREEN) {
+    // Termperature Unit
+    if (oled.curr_menu_item == 0) {
+      //mhz19b.set_unit((buf % 2) == 1 ? FAHRENHEIT : CELSIUS);
+      if ((buf)%2 == 1) {
+        mhz19b.set_unit(FAHRENHEIT);
+        Serial.printf("Setting to: %d\n", buf%2);
+      }
+      else {
+        mhz19b.set_unit(CELSIUS);
+        Serial.printf("Setting to: %d\n", buf%2);
+      }
+      oled.current_screen = MENU_SCREEN;
+    }
+  } 
 }
 
 void Buttons::button_left_long_press_handler(Button2 &btn) {

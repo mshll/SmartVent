@@ -147,8 +147,7 @@ void OLED::display_menu_item_screen() {
       u8g2->setFont(u8g_font_7x14B);
       u8g2->drawStr(ALIGN_CENTER("Farenheit"), 53, "Farenheit");
       u8g2->drawFrame(18, 39, 92, 18);
-    }
-    else {
+    } else {
       u8g2->drawStr(ALIGN_CENTER("Farenheit"), 53, "Farenheit");
       u8g2->setFont(u8g_font_7x14B);
       u8g2->drawStr(ALIGN_CENTER("Celcius"), 38, "Celcius");

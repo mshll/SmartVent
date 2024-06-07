@@ -110,6 +110,12 @@ void Buttons::button_left_handler(Button2 &btn) {
       fans.set_override(0);
       oled.current_screen = MENU_SCREEN;
     }
+    // Exiting Wifi Details
+    if (oled.curr_menu_item == 2) {
+      // Nothing to put here other than serial print and exiting from it.
+      Serial.printf("Closing WiFi Details\n");
+      oled.current_screen = MAIN_SCREEN;
+    }
     // DO NOT Reset Wifi
     if (oled.curr_menu_item == 3) {
       Serial.printf("Wifi reset Aborted!\n");
@@ -135,6 +141,11 @@ void Buttons::button_right_handler(Button2 &btn) {
       fans.set_override(1);
       buf = 0;
     }
+    // Select Show Wifi Details 
+    if (oled.curr_menu_item == 2) {
+      // Nothing to put here other than serial print and exiting from it.
+      Serial.printf("Showing WiFi Details\n");
+    }
     // Select Wifi Reset Option 
     if (oled.curr_menu_item == 3) {
       // Nothing to put here other than serial print.
@@ -154,6 +165,11 @@ void Buttons::button_right_handler(Button2 &btn) {
       // Keep the Override on save.
       fans.set_override(1);
       fans.override_speed = fans.get_speed_from_index(buf);
+      oled.current_screen = MAIN_SCREEN;
+    }
+    if (oled.curr_menu_item == 2) {
+      // Nothing to put here other than serial print and exiting from it.
+      Serial.printf("Closing WiFi Details\n");
       oled.current_screen = MAIN_SCREEN;
     }
     // Reset Wifi

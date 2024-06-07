@@ -8,6 +8,8 @@
 #include "fans.h"
 #include "mhz19b.h"
 #include "buttons.h"
+#include "webserver.h"
+#include "wifiFix.h"
 
 #define SCREEN_IDLE_TIMEOUT 30000
 #define LCDWidth u8g2->getDisplayWidth()
@@ -18,6 +20,7 @@
 extern MHZ19B mhz19b;
 extern Fans fans;
 extern Buttons buttons;
+extern WebServer webserver;
 
 /* helper functions prototypes */
 void split_float(float number, String &int_part, String &dec_part);
@@ -217,9 +220,18 @@ void OLED::display_menu_item_screen() {
     
   } 
   if (curr_menu_item == 2) {
-    // TODO: Display wifi stuff.
+    if (ESPConnect.getState() == ESPConnectState::NETWORK_CONNECTED) {
+      // TODO: Display Wifi Details.
+    } 
+    else {
+      u8g2->setFont(u8g_font_7x14B);
+      u8g2->drawStr(ALIGN_CENTER("NOT"), 36, "NOT");
+      u8g2->drawStr(ALIGN_CENTER("CONNECTED!"), 52, "CONNECTED!");
+    }
+
   } 
   if (curr_menu_item == 3) {
+    u8g2->setFont(u8g_font_7x14);
     u8g2->drawStr(ALIGN_CENTER("Do you"), 32, "Do you");
     u8g2->drawStr(ALIGN_CENTER("want to"), 46, "want to");
     u8g2->drawStr(ALIGN_CENTER("RESET WIFI?"), 60, "RESET WIFI?");

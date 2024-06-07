@@ -142,7 +142,7 @@ void OLED::display_menu_item_screen() {
   u8g2->setFont(u8g_font_7x14);
   // toggle temp unit display
   if (curr_menu_item == 0) {
-    if ((buttons.buf % 2) == 1) {
+    if (buttons.buf) {
       u8g2->drawStr(ALIGN_CENTER("Celcius"), 38, "Celcius");
       u8g2->setFont(u8g_font_7x14B);
       u8g2->drawStr(ALIGN_CENTER("Farenheit"), 53, "Farenheit");
@@ -154,10 +154,67 @@ void OLED::display_menu_item_screen() {
       u8g2->drawFrame(18, 24, 92, 18);
     }
   } 
+  // Toggle Fans Override
   if (curr_menu_item == 1) {
-    // Toggle Fans Override
-    //fans.toggle_override();
-    // TODO: fans.get_speed()
+    u8g2->setFont(u8g_font_7x14);
+    const char *override_fan_speed;
+    switch (decrement(buttons.buf, 5)) {
+      case 1: 
+        override_fan_speed = "Slow";
+        break;
+      case 2: 
+        override_fan_speed = "Medium";
+        break;
+      case 3:
+         override_fan_speed = "Fast";
+        break;
+      case 4: 
+        override_fan_speed = "Maximum";
+        break;
+      default: 
+        override_fan_speed = "Off";
+        break;
+    }
+    u8g2->drawStr(ALIGN_CENTER(override_fan_speed), 32, (override_fan_speed));
+    switch ((buttons.buf)+1) {
+      case 1: 
+        override_fan_speed = "Slow";
+        break;
+      case 2: 
+        override_fan_speed = "Medium";
+        break;
+      case 3: 
+        override_fan_speed = "Fast";
+        break;
+      case 4: 
+        override_fan_speed = "Maximum";
+        break;
+      default: 
+        override_fan_speed = "Off";
+        break;
+    }
+    u8g2->drawStr(ALIGN_CENTER(override_fan_speed), 60, override_fan_speed);
+    switch (buttons.buf) {
+      case 1: 
+        override_fan_speed = "Slow";
+        break;
+      case 2: 
+        override_fan_speed = "Medium";
+        break;
+      case 3: 
+        override_fan_speed = "Fast";
+        break;
+      case 4: 
+        override_fan_speed = "Maximum";
+        break;
+      default: 
+        override_fan_speed = "Off";
+        break;
+    }
+    u8g2->setFont(u8g_font_7x14B);
+    u8g2->drawStr(ALIGN_CENTER(override_fan_speed), 46, override_fan_speed);
+    u8g2->drawFrame(18, 34, 92, 15);
+    
   } 
   if (curr_menu_item == 2) {
     // TODO: Display wifi stuff.

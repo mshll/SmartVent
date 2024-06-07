@@ -100,7 +100,7 @@ void Dashboard::set_callbacks() {
 
   fans_override_slider.attachCallback([&](int value) {
     fans_override_slider.update(value);
-    fans.override_speed = get_speed_from_index(value);
+    fans.override_speed = fans.get_speed_from_index(value);
     dashboard_ticker_handler();
     espdash.sendUpdates();
   });

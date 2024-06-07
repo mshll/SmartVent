@@ -81,7 +81,7 @@ bool Fans::get_override() {
   return override;
 }
 
-FanSpeed get_speed_from_index(int index) {
+FanSpeed Fans::get_speed_from_index(int index) {
   switch (index) {
     case 0:
       return FAN_OFF;

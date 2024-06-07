@@ -6,6 +6,7 @@
 #include "buttons.h"
 #include "common.h"
 #include "oled.h"
+#include "fans.h"
 
 void button_up_handler_wrapper(Button2 &btn);
 void button_down_handler_wrapper(Button2 &btn);
@@ -16,6 +17,7 @@ int buf = 0;
 
 extern OLED oled;
 extern MHZ19B mhz19b;
+extern Fans fans;
 
 Buttons::Buttons() {
   button_ticker = new TickTwo(std::bind(&Buttons::button_ticker_handler, this), 1000);
@@ -56,7 +58,11 @@ void Buttons::button_up_handler(Button2 &btn) {
   else if (oled.current_screen == MENU_ITEM_SCREEN) {
     // Termperature Unit
     if (oled.curr_menu_item == 0) {
-      buf += 1;
+      buf = increment(buf, 2);
+      Serial.printf("%d\n", buf);
+    }
+    if (oled.curr_menu_item == 1) {
+      buf = increment(buf, 5);
       Serial.printf("%d\n", buf);
     }
   } 
@@ -69,11 +75,15 @@ void Buttons::button_down_handler(Button2 &btn) {
   if (oled.current_screen == MENU_SCREEN) {
     oled.curr_menu_item = increment(oled.curr_menu_item, oled.menu_items_count);
   } 
-  // Selected Menu Item
+  // Modifying Selected Menu Item
   else if (oled.current_screen == MENU_ITEM_SCREEN) {
     // Termperature Unit
     if (oled.curr_menu_item == 0) {
-      buf += 1;
+      buf = decrement(buf, 2);
+      Serial.printf("%d\n", buf);
+    }
+    if (oled.curr_menu_item == 1) {
+      buf = decrement(buf, 5);
       Serial.printf("%d\n", buf);
     }
   } 
@@ -88,11 +98,16 @@ void Buttons::button_left_handler(Button2 &btn) {
   } else if (oled.current_screen == MENU_ITEM_SCREEN) {
     oled.current_screen = MENU_SCREEN;
   } 
-  // Discard Changed Items
+  // Discard Changed to Items
   else if (oled.current_screen == MENU_ITEM_SCREEN) {
     // Termperature Unit
     if (oled.curr_menu_item == 0) {
       Serial.printf("Discarding Changes.\n");
+      oled.current_screen = MENU_SCREEN;
+    }
+    // Disable & Exit Manual Fan Speed Override (Done!)
+    if (oled.curr_menu_item == 1) {
+      fans.set_override(0);
       oled.current_screen = MENU_SCREEN;
     }
   } 
@@ -105,8 +120,15 @@ void Buttons::button_right_handler(Button2 &btn) {
     oled.current_screen = MENU_SCREEN;
   } else if (oled.current_screen == MENU_SCREEN) {
     oled.current_screen = MENU_ITEM_SCREEN;
+    // Initializing buffer for certain Menu Items
+    // Temperature Unit
     if (oled.curr_menu_item == 0) {
       mhz19b.get_unit() == CELSIUS ? (buf = 0) : (buf = 1);
+    }
+    // Enable Manual Fan Speed Override 
+    if (oled.curr_menu_item == 1) {
+      fans.set_override(1);
+      buf = 0;
     }
   }
   // Saving Changed Items
@@ -117,6 +139,14 @@ void Buttons::button_right_handler(Button2 &btn) {
       Serial.printf("Setting Temperature Unit to %s.\n", ((buf % 2) == 1 ? "Fahrenheit" : "Celsius"));
       oled.current_screen = MENU_SCREEN;
     }
+    // Keep Fan Speed Override.
+    if (oled.curr_menu_item == 1) {
+      // Keep the Override on save.
+      fans.set_override(1);
+      fans.override_speed = fans.get_speed_from_index(buf);
+      oled.current_screen = MAIN_SCREEN;
+    }
+
   } 
 }
 

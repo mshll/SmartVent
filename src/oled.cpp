@@ -9,7 +9,8 @@
 #include "mhz19b.h"
 #include "buttons.h"
 #include "webserver.h"
-#include "wifiFix.h"
+#include "WiFi.h"
+#include "WiFiSTA.h"
 
 #define SCREEN_IDLE_TIMEOUT 30000
 #define LCDWidth u8g2->getDisplayWidth()
@@ -221,7 +222,13 @@ void OLED::display_menu_item_screen() {
   } 
   if (curr_menu_item == 2) {
     if (ESPConnect.getState() == ESPConnectState::NETWORK_CONNECTED) {
-      // TODO: Display Wifi Details.
+      // TODO: Update to Display Additional Wifi Details?
+      u8g2->setFont(u8g_font_7x14);
+      u8g2->drawStr(0, 32, ("IP: " + ESPConnect.getIPAddress()));
+      // MAC Addresss giving Conversion type Errors.
+      //u8g2->drawStr(0, 46, ("MAC: " + ESPConnect.getMACAddress()));
+      // One more line we can add to display.
+      //u8g2->drawStr(0, 60, ("ID: "));
     } 
     else {
       u8g2->setFont(u8g_font_7x14B);

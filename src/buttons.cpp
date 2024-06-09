@@ -64,7 +64,7 @@ void Buttons::button_up_handler(Button2 &btn) {
       Serial.printf("%d\n", buf);
     }
     if (oled.curr_menu_item == 1) {
-      buf = increment(buf, 5);
+      buf = decrement(buf, 5);
       Serial.printf("%d\n", buf);
     }
   } 
@@ -85,7 +85,7 @@ void Buttons::button_down_handler(Button2 &btn) {
       Serial.printf("%d\n", buf);
     }
     if (oled.curr_menu_item == 1) {
-      buf = decrement(buf, 5);
+      buf = increment(buf, 5);
       Serial.printf("%d\n", buf);
     }
   } 

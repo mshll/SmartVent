@@ -3,14 +3,14 @@
  * @copyright Copyright (c) 2024
  */
 
-#include "common.h"
+#include "dashboard.h"
 #include "ESPDash.h"
+#include "common.h"
 #include "fans.h"
 #include "oled.h"
 #include "webserver.h"
-#include "dashboard.h"
 
-#define DEBUG
+// #define DEBUG  // Uncomment to enable debug mode for logging (logs every second instead of every 10 minutes)
 
 #define DASH_REFRESH_INTERVAL 2000
 #define LOG_SIZE 144
@@ -100,7 +100,8 @@ void Dashboard::set_callbacks() {
 
   fans_override_slider.attachCallback([&](int value) {
     fans_override_slider.update(value);
-    fans.override_speed = fans.get_speed_from_index(value);
+    fans.override_speed = get_speed_from_index(value);
+    pref_manager.set_value("override_speed", value);
     dashboard_ticker_handler();
     espdash.sendUpdates();
   });

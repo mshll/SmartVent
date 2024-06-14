@@ -24,6 +24,8 @@ void MHZ19B::init() {
 
   mhz19b.autoCalibration(true);
   mhz19b_ticker->start();
+
+  unit = (TemperatureUnit)pref_manager.get_value("temp_unit", (int)CELSIUS);  // get saved temperature unit, default to CELSIUS
 }
 
 void MHZ19B::loop() {
@@ -50,6 +52,7 @@ const char* MHZ19B::get_air_quality() {
 
 void MHZ19B::set_unit(TemperatureUnit unit) {
   this->unit = unit;
+  pref_manager.set_value("temp_unit", (int)unit);
 }
 
 TemperatureUnit MHZ19B::get_unit() {

@@ -5,8 +5,8 @@
 
 #include "buttons.h"
 #include "common.h"
-#include "oled.h"
 #include "fans.h"
+#include "oled.h"
 #include "webserver.h"
 
 void button_up_handler_wrapper(Button2 &btn);
@@ -52,133 +52,113 @@ void Buttons::loop() {
 
 void Buttons::button_up_handler(Button2 &btn) {
   Serial.println("Button up pressed");
+  if (!oled.is_enabled()) return;  // Ignore button press if OLED is disabled.
   oled.main_screen_idle_ticker->start();
+
   if (oled.current_screen == MENU_SCREEN) {
     oled.curr_menu_item = decrement(oled.curr_menu_item, oled.menu_items_count);
-  } 
+  }
   // Selected Menu Item
-  else if (oled.current_screen == MENU_ITEM_SCREEN) {
-    // Termperature Unit
-    if (oled.curr_menu_item == 0) {
-      buf = increment(buf, 2);
-      Serial.printf("%d\n", buf);
+  if (oled.current_screen == MENU_ITEM_SCREEN) {
+    if (oled.curr_menu_item == TOGGLE_TEMP_UNIT) {
+      buf = decrement(buf, 2);
     }
-    if (oled.curr_menu_item == 1) {
+    if (oled.curr_menu_item == FANS_OVERRIDE) {
       buf = decrement(buf, 5);
-      Serial.printf("%d\n", buf);
     }
-  } 
-
+  }
 }
 
 void Buttons::button_down_handler(Button2 &btn) {
   Serial.println("Button down pressed");
+  if (!oled.is_enabled()) return;  // Ignore button press if OLED is disabled.
   oled.main_screen_idle_ticker->start();
+
   if (oled.current_screen == MENU_SCREEN) {
     oled.curr_menu_item = increment(oled.curr_menu_item, oled.menu_items_count);
-  } 
+  }
   // Modifying Selected Menu Item
-  else if (oled.current_screen == MENU_ITEM_SCREEN) {
+  if (oled.current_screen == MENU_ITEM_SCREEN) {
     // Termperature Unit
-    if (oled.curr_menu_item == 0) {
-      buf = decrement(buf, 2);
-      Serial.printf("%d\n", buf);
+    if (oled.curr_menu_item == TOGGLE_TEMP_UNIT) {
+      buf = increment(buf, 2);
     }
-    if (oled.curr_menu_item == 1) {
+    if (oled.curr_menu_item == FANS_OVERRIDE) {
       buf = increment(buf, 5);
-      Serial.printf("%d\n", buf);
     }
-  } 
-
+  }
 }
 
 void Buttons::button_left_handler(Button2 &btn) {
   Serial.println("Button left pressed");
+  if (!oled.is_enabled()) return;  // Ignore button press if OLED is disabled.
   oled.main_screen_idle_ticker->start();
+
   if (oled.current_screen == MENU_SCREEN) {
     oled.current_screen = MAIN_SCREEN;
-  } 
+  }
   // Discard Changed to Items
-  if (oled.current_screen == MENU_ITEM_SCREEN) {
-    // Termperature Unit
-    if (oled.curr_menu_item == 0) {
+  else if (oled.current_screen == MENU_ITEM_SCREEN) {
+    if (oled.curr_menu_item == TOGGLE_TEMP_UNIT) {
       Serial.printf("Discarding Changes.\n");
-      oled.current_screen = MENU_SCREEN;
     }
-    // Disable & Exit Manual Fan Speed Override (Done!)
-    if (oled.curr_menu_item == 1) {
-      fans.set_override(0);
-      oled.current_screen = MENU_SCREEN;
+    if (oled.curr_menu_item == FANS_OVERRIDE) {
+      fans.set_override(false);
     }
-    // Exiting Wifi Details
-    if (oled.curr_menu_item == 2) {
-      // Nothing to put here other than serial print and exiting from it.
+    if (oled.curr_menu_item == VIEW_WIFI_INFO) {
       Serial.printf("Closing WiFi Details\n");
-      oled.current_screen = MAIN_SCREEN;
     }
-    // DO NOT Reset Wifi
-    if (oled.curr_menu_item == 3) {
+    if (oled.curr_menu_item == RESET_WIFI) {
       Serial.printf("Wifi reset Aborted!\n");
-      oled.current_screen = MAIN_SCREEN;
     }
-  } 
+
+    oled.current_screen = MENU_SCREEN;
+  }
 }
 
 void Buttons::button_right_handler(Button2 &btn) {
   Serial.println("Button right pressed");
+  if (!oled.is_enabled()) return;  // Ignore button press if OLED is disabled.
   oled.main_screen_idle_ticker->start();
+
   if (oled.current_screen == MAIN_SCREEN) {
     oled.current_screen = MENU_SCREEN;
   } else if (oled.current_screen == MENU_SCREEN) {
     oled.current_screen = MENU_ITEM_SCREEN;
-    // Initializing buffer for certain Menu Items
-    // Temperature Unit
-    if (oled.curr_menu_item == 0) {
-      mhz19b.get_unit() == CELSIUS ? (buf = 0) : (buf = 1);
+
+    if (oled.curr_menu_item == TOGGLE_TEMP_UNIT) {
+      buf = (int)mhz19b.get_unit();
     }
-    // Enable Manual Fan Speed Override 
-    if (oled.curr_menu_item == 1) {
-      fans.set_override(1);
-      buf = 0;
+    if (oled.curr_menu_item == FANS_OVERRIDE) {
+      buf = get_index_from_speed(fans.override_speed);
     }
-    // Select Show Wifi Details 
-    if (oled.curr_menu_item == 2) {
-      // Nothing to put here other than serial print and exiting from it.
+    if (oled.curr_menu_item == VIEW_WIFI_INFO) {
       Serial.printf("Showing WiFi Details\n");
     }
-    // Select Wifi Reset Option 
-    if (oled.curr_menu_item == 3) {
-      // Nothing to put here other than serial print.
+    if (oled.curr_menu_item == RESET_WIFI) {
       Serial.printf("Reset Wifi?\n");
     }
   }
   // Saving Changed Items
   else if (oled.current_screen == MENU_ITEM_SCREEN) {
-    // Termperature Unit
-    if (oled.curr_menu_item == 0) {
+    if (oled.curr_menu_item == TOGGLE_TEMP_UNIT) {
       mhz19b.set_unit((buf % 2) == 1 ? FAHRENHEIT : CELSIUS);
       Serial.printf("Setting Temperature Unit to %s.\n", ((buf % 2) == 1 ? "Fahrenheit" : "Celsius"));
-      oled.current_screen = MENU_SCREEN;
     }
-    // Keep Fan Speed Override.
-    if (oled.curr_menu_item == 1) {
-      // Keep the Override on save.
-      fans.set_override(1);
-      fans.override_speed = fans.get_speed_from_index(buf);
-      oled.current_screen = MAIN_SCREEN;
+    if (oled.curr_menu_item == FANS_OVERRIDE) {
+      fans.set_override(true);  // Keep the Override on save.
+      fans.override_speed = get_speed_from_index(buf);
+      pref_manager.set_value("override_speed", buf);
     }
-    if (oled.curr_menu_item == 2) {
-      // Nothing to put here other than serial print and exiting from it.
+    if (oled.curr_menu_item == VIEW_WIFI_INFO) {
       Serial.printf("Closing WiFi Details\n");
-      oled.current_screen = MAIN_SCREEN;
     }
-    // Reset Wifi
-    if (oled.curr_menu_item == 3) {
+    if (oled.curr_menu_item == RESET_WIFI) {
       webserver.reset_wifi();
       Serial.printf("Wifi has been reset\n");
-      oled.current_screen = MAIN_SCREEN;
     }
-  } 
+    oled.current_screen = MAIN_SCREEN;
+  }
 }
 
 void Buttons::button_left_long_press_handler(Button2 &btn) {

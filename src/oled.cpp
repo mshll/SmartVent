@@ -4,13 +4,13 @@
  */
 
 #include "oled.h"
+#include "WiFi.h"
+#include "WiFiSTA.h"
+#include "buttons.h"
 #include "common.h"
 #include "fans.h"
 #include "mhz19b.h"
-#include "buttons.h"
 #include "webserver.h"
-#include "WiFi.h"
-#include "WiFiSTA.h"
 
 #define SCREEN_IDLE_TIMEOUT 30000
 #define LCDWidth u8g2->getDisplayWidth()
@@ -96,19 +96,24 @@ void OLED::display_main_screen() {
   u8g2->setDrawColor(1);
   u8g2->drawXBM(9, 46, 11, 16, image_temperature_bits);
   u8g2->setFont(u8g2_font_profont22_tr);
-  u8g2->drawStr(21, 61, temp_int.c_str());
+  u8g2->drawStr(23, 61, temp_int.c_str());
   u8g2->setFont(u8g2_font_profont10_tr);
-  u8g2->drawStr(43, 61, temp_dec.c_str());
-  u8g2->drawEllipse(49, 48, 1, 1);
-  u8g2->drawStr(53, 53, mhz19b.get_unit() == CELSIUS ? "C" : "F");
-  u8g2->setFont(u8g2_font_timR14_tr);
+  u8g2->drawStr(45, 61, temp_dec.c_str());
+  u8g2->drawEllipse(51, 48, 1, 1);
+  u8g2->drawStr(55, 53, mhz19b.get_unit() == CELSIUS ? "C" : "F");
+  u8g2->setFont(u8g2_font_profont22_tr);
   const char *fan_speed = fans.get_speed(1);
-  u8g2->drawStr(ALIGN_RIGHT(fan_speed) - 10, 60, fan_speed);
-  u8g2_int_t fan_speed_left_end = ALIGN_RIGHT(fan_speed) - 10 - 15 - 3;
+  u8g2->drawStr(ALIGN_RIGHT(fan_speed) - 1, 60, fan_speed);
+  u8g2_int_t fan_speed_left_end = ALIGN_RIGHT(fan_speed) - 20;
   // u8g2->drawXBM(66, 46, 15, 16, image_fan_icon_bits);
   u8g2->drawXBM(fan_speed_left_end, 46, 15, 16, image_fan_icon_bits);
+  u8g2->setFont(u8g2_font_4x6_tr);
+  if (fans.get_override()) {
+    u8g2->setDrawColor(2);
+    u8g2->drawStr(105, 7, "OV");
+    u8g2->drawBox(104, 1, 9, 7);
+  }
 }
-
 
 void OLED::display_menu_screen() {
   // selected item background
@@ -137,114 +142,66 @@ void OLED::display_menu_screen() {
 }
 
 void OLED::display_menu_item_screen() {
-  // draw selected menu item top frame
-  u8g2->drawFrame(1, 1, 127, 18);
+  u8g2->drawFrame(1, 1, 127, 18);  // draw selected menu item top frame
   // draw selected menu item as header
   u8g2->setFont(u8g_font_7x14B);
-  u8g2->drawStr(ALIGN_CENTER(menu_items[curr_menu_item]), 15, menu_items[curr_menu_item]);
-
+  String menu_item = menu_items[curr_menu_item];
+  menu_item.replace("View ", "");  // remove "View " from menu item (View Wi-Fi Info -> Wi-Fi Info)
+  u8g2->drawStr(ALIGN_CENTER(menu_item.c_str()), 15, menu_item.c_str());
   u8g2->setFont(u8g_font_7x14);
-  // toggle temp unit display
-  if (curr_menu_item == 0) {
-    if (buttons.buf) {
-      u8g2->drawStr(ALIGN_CENTER("Celcius"), 38, "Celcius");
-      u8g2->setFont(u8g_font_7x14B);
-      u8g2->drawStr(ALIGN_CENTER("Farenheit"), 53, "Farenheit");
-      u8g2->drawFrame(18, 39, 92, 18);
-    } else {
-      u8g2->drawStr(ALIGN_CENTER("Farenheit"), 53, "Farenheit");
-      u8g2->setFont(u8g_font_7x14B);
-      u8g2->drawStr(ALIGN_CENTER("Celcius"), 38, "Celcius");
-      u8g2->drawFrame(18, 24, 92, 18);
-    }
-  } 
-  // Toggle Fans Override
-  if (curr_menu_item == 1) {
+
+  if (curr_menu_item == TOGGLE_TEMP_UNIT) {
+    const char *cur_unit = mhz19b.get_unit() == CELSIUS ? "Celcius" : "Farenheit";
+    const char *other_unit = mhz19b.get_unit() == CELSIUS ? "Farenheit" : "Celcius";
+
+    u8g2->drawStr(ALIGN_CENTER(cur_unit), 38, cur_unit);
+    u8g2->setFont(u8g_font_7x14B);
+    u8g2->drawStr(ALIGN_CENTER(other_unit), 53, other_unit);
+    u8g2->drawFrame(18, 39, 92, 18);
+  }
+
+  if (curr_menu_item == FANS_OVERRIDE) {
     u8g2->setFont(u8g_font_7x14);
     const char *override_fan_speed;
-    switch (decrement(buttons.buf, 5)) {
-      case 1: 
-        override_fan_speed = "Slow";
-        break;
-      case 2: 
-        override_fan_speed = "Medium";
-        break;
-      case 3:
-         override_fan_speed = "Fast";
-        break;
-      case 4: 
-        override_fan_speed = "Maximum";
-        break;
-      default: 
-        override_fan_speed = "Off";
-        break;
-    }
+    override_fan_speed = fans.get_speed(0, 1, get_speed_from_index(decrement(buttons.buf, 5)));
     u8g2->drawStr(ALIGN_CENTER(override_fan_speed), 32, (override_fan_speed));
-    switch ((buttons.buf)+1) {
-      case 1: 
-        override_fan_speed = "Slow";
-        break;
-      case 2: 
-        override_fan_speed = "Medium";
-        break;
-      case 3: 
-        override_fan_speed = "Fast";
-        break;
-      case 4: 
-        override_fan_speed = "Maximum";
-        break;
-      default: 
-        override_fan_speed = "Off";
-        break;
-    }
+
+    override_fan_speed = fans.get_speed(0, 1, get_speed_from_index(buttons.buf + 1));
     u8g2->drawStr(ALIGN_CENTER(override_fan_speed), 60, override_fan_speed);
-    switch (buttons.buf) {
-      case 1: 
-        override_fan_speed = "Slow";
-        break;
-      case 2: 
-        override_fan_speed = "Medium";
-        break;
-      case 3: 
-        override_fan_speed = "Fast";
-        break;
-      case 4: 
-        override_fan_speed = "Maximum";
-        break;
-      default: 
-        override_fan_speed = "Off";
-        break;
-    }
+
     u8g2->setFont(u8g_font_7x14B);
+    override_fan_speed = fans.get_speed(0, 1, get_speed_from_index(buttons.buf));
     u8g2->drawStr(ALIGN_CENTER(override_fan_speed), 46, override_fan_speed);
     u8g2->drawFrame(18, 34, 92, 15);
-    
-  } 
-  if (curr_menu_item == 2) {
+  }
+
+  if (curr_menu_item == VIEW_WIFI_INFO) {
     if (ESPConnect.getState() == ESPConnectState::NETWORK_CONNECTED) {
-      // TODO: Update to Display Additional Wifi Details?
       u8g2->setFont(u8g_font_7x14);
-      u8g2->drawStr(0, 32, ("IP: " + ESPConnect.getIPAddress()));
-      // MAC Addresss giving Conversion type Errors.
-      //u8g2->drawStr(0, 46, ("MAC: " + ESPConnect.getMACAddress()));
-      // One more line we can add to display.
-      //u8g2->drawStr(0, 60, ("ID: "));
-    } 
-    else {
-      u8g2->setFont(u8g_font_7x14B);
-      u8g2->drawStr(ALIGN_CENTER("NOT"), 36, "NOT");
-      u8g2->drawStr(ALIGN_CENTER("CONNECTED!"), 52, "CONNECTED!");
+      const String ssid = WiFi.SSID();
+      const String dashboard_url = webserver.get_hostname() + ".local";
+      const String ip = webserver.get_device_ip();
+      u8g2->drawStr(5, 32, ("SSID: " + ssid).c_str());
+      u8g2->drawStr(5, 46, ("IP: " + ip).c_str());
+      u8g2->drawStr(5, 60, (dashboard_url).c_str());
+    } else {
+      u8g2->clearBuffer();
+      u8g2->setFont(u8g_font_5x8);
+      u8g2->drawStr(0, 10, "Connect to");
+      u8g2->drawStr(0, 22, String(AP_SSID).c_str());
+      u8g2->drawStr(0, 34, ("PWD:" + String(AP_PASS)).c_str());
+      u8g2->drawStr(0, 46, "to set Wi-Fi");
+      u8g2->drawStr(0, 61, "OR SCAN QR >");
+      u8g2->drawXBM(64, 0, 64, 64, smartvent_ap_qr_code);
     }
+  }
 
-  } 
-  if (curr_menu_item == 3) {
+  if (curr_menu_item == RESET_WIFI) {
     u8g2->setFont(u8g_font_7x14);
-    u8g2->drawStr(ALIGN_CENTER("Do you"), 32, "Do you");
-    u8g2->drawStr(ALIGN_CENTER("want to"), 46, "want to");
-    u8g2->drawStr(ALIGN_CENTER("RESET WIFI?"), 60, "RESET WIFI?");
-  } 
-
-
+    u8g2->drawStr(ALIGN_CENTER("Are you sure you"), 32, "Are you sure you");
+    u8g2->drawStr(ALIGN_CENTER("want to reset"), 46, "want to reset");
+    u8g2->drawStr(ALIGN_CENTER("Wi-Fi settings?"), 60, "Wi-Fi settings?");
+  }
 }
 
 void OLED::display_splash_screen() {

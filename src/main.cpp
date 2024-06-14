@@ -23,6 +23,7 @@
 #include "fans.h"
 #include "mhz19b.h"
 #include "oled.h"
+#include "preferences_manager.h"
 #include "webserver.h"
 
 /* global variables */
@@ -33,11 +34,13 @@ MHZ19B mhz19b;
 OLED oled;
 Fans fans;
 Buttons buttons;
+PreferencesManager pref_manager("smartvent");
 
 void core1_task(void* parameter);
 
 void setup() {
   Serial.begin(9600);
+  pref_manager.init();
   oled.init();
   webserver.init();
   mhz19b.init();

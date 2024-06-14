@@ -26,6 +26,8 @@ class WebServer {
   const String serialize_devices();
   const String serialize_stats();
   const String get_time(const char* format);
+  const String get_hostname();
+  const String get_device_ip();
 
  private:
   AsyncWebServer* _server;

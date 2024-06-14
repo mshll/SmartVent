@@ -21,12 +21,11 @@ class Fans {
   void init();
   void update(int co2);
   FanSpeed get_speed();
-  const char *get_speed(bool is_short);
+  const char *get_speed(bool is_short, bool force = false, FanSpeed speed = FAN_OFF);
   void set_override(bool override);
   bool toggle_override();
   bool get_override();
   FanSpeed override_speed;
-  FanSpeed get_speed_from_index(int index);
 
  private:
   FanSpeed current_speed;
@@ -35,3 +34,4 @@ class Fans {
 };
 
 int get_index_from_speed(FanSpeed speed);
+FanSpeed get_speed_from_index(int index);

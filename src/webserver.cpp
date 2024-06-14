@@ -107,7 +107,7 @@ void WebServer::loop() {
   if (millis() - last_log > 5000) {
     Serial.println("IP: " + WiFi.localIP().toString());
     Serial.println("MAC: " + WiFi.macAddress());
-    Serial.println("ID: " + device_id + " // " + "Leader: " + leader_id + " // " + "URL: http://" + (is_leader ? HOSTNAME : hostname) + ".local");
+    Serial.println("ID: " + device_id + " // " + "Leader: " + leader_id + " // " + "URL: http://" + get_hostname() + ".local");
     last_log = millis();
   }
 
@@ -122,12 +122,10 @@ void WebServer::loop() {
  * @brief Sets up mDNS responder using the appropriate hostname depending on the device's role.
  */
 void WebServer::setup_mdns() {
-  String hostname_str = is_leader ? HOSTNAME : hostname;  // If the device is the leader, use the default hostname
-
   delay(500);
-  if (MDNS.begin(hostname_str.c_str())) {
+  if (MDNS.begin(get_hostname().c_str())) {
     MDNS.addService("http", "tcp", 80);
-    Serial.println("mDNS responder started on " + hostname_str);
+    Serial.println("mDNS responder started on " + get_hostname());
   } else {
     Serial.println("Error setting up MDNS responder!");
   }
@@ -366,4 +364,12 @@ const String WebServer::get_time(const char* format) {
     return String(buffer);
   }
   return "";
+}
+
+const String WebServer::get_hostname() {
+  return is_leader ? HOSTNAME : hostname;
+}
+
+const String WebServer::get_device_ip() {
+  return WiFi.localIP().toString();
 }

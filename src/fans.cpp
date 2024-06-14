@@ -19,6 +19,9 @@ void Fans::init() {
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, LOW);
 
+  override = pref_manager.get_value("override", false);
+  override_speed = get_speed_from_index(pref_manager.get_value("override_speed", 0));
+
   set_speed(FAN_OFF);
 }
 
@@ -43,7 +46,7 @@ void Fans::update(int co2) {
 
 void Fans::set_speed(FanSpeed speed) {
   current_speed = speed;
-  ledcWrite(0, speed == FAN_OFF ? FAN_MEDIUM : speed);
+  ledcWrite(0, speed == FAN_OFF ? FAN_MEDIUM : speed);  // When off set speed to medium but turn off relay (avoid some weird behavior)
   digitalWrite(RELAY_PIN, speed == FAN_OFF ? LOW : HIGH);
 }
 
@@ -51,8 +54,9 @@ FanSpeed Fans::get_speed() {
   return current_speed;
 }
 
-const char *Fans::get_speed(bool is_short) {
-  switch (current_speed) {
+const char *Fans::get_speed(bool is_short, bool force, FanSpeed speed) {
+  FanSpeed cur_speed = force ? speed : current_speed;
+  switch (cur_speed) {
     case FAN_OFF:
       return is_short ? "Off" : "Off";
     case FAN_LOW:
@@ -70,10 +74,12 @@ const char *Fans::get_speed(bool is_short) {
 
 void Fans::set_override(bool override) {
   this->override = override;
+  pref_manager.set_value("override", override);
 }
 
 bool Fans::toggle_override() {
   override = !override;
+  pref_manager.set_value("override", override);
   return override;
 }
 
@@ -81,7 +87,7 @@ bool Fans::get_override() {
   return override;
 }
 
-FanSpeed Fans::get_speed_from_index(int index) {
+FanSpeed get_speed_from_index(int index) {
   switch (index) {
     case 0:
       return FAN_OFF;

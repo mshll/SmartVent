@@ -10,7 +10,7 @@
 #include "oled.h"
 #include "webserver.h"
 
-// #define DEBUG  // Uncomment to enable debug mode for logging (logs every second instead of every 10 minutes)
+#define DEBUG  // Uncomment to enable debug mode for logging (logs every second instead of every 10 minutes)
 
 #define DASH_REFRESH_INTERVAL 2000
 #define LOG_SIZE 144
